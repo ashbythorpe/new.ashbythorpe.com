@@ -1,0 +1,217 @@
+:where(h1) {
+  margin-block: 0.67em;
+  font-size: 2em;
+}
+
+/* Copied from:
+* https://github.com/tailwindlabs/tailwindcss-typography/blob/main/src/styles.js 
+*/
+#blog-content {
+	font-size: 1rem;
+	line-height: 1.75;
+
+	p {
+		margin-top: 1.25em;
+		margin-bottom: 1.25em;
+	}
+	[class~="lead"] {
+		font-size: 1.25em;
+		line-height: 1.6;
+		margin-top: 1.2em;
+		margin-bottom: 1.2em;
+	}
+	blockquote {
+		margin-top: 1.6em;
+		margin-bottom: 1.6em;
+		padding-inline-start: 1em;
+	}
+	h1 {
+		font-size: 2.25em;
+		margin-top: 0;
+		margin-bottom: 0.89em;
+
+		line-height: 1.11;
+	}
+	h2 {
+		font-size: 1.5em;
+		margin-top: 2em;
+		margin-bottom: 1em;
+		line-height: 1.33;
+	}
+	h3 {
+		font-size: 1.25em;
+		margin-top: 1.6em;
+		margin-bottom: 0.6em;
+		line-height: 1.6;
+	}
+	h4 {
+		margin-top: 1.5em;
+		margin-bottom: 0.5em;
+		line-height: 1.5;
+	}
+	img {
+		margin-top: 2em;
+		margin-bottom: 2em;
+	}
+	picture {
+		margin-top: 2em;
+		margin-bottom: 2em;
+	}
+	picture > img {
+		margin-top: 0;
+		margin-bottom: 0;
+	}
+	video {
+		margin-top: 2em;
+		margin-bottom: 2em;
+	}
+	kbd {
+		font-size: 0.875em;
+		border-radius: r5em;
+		padding-top: 0.19em;
+		padding-inline-end: 0.375em;
+		padding-bottom: 0.19em;
+		padding-inline-start: 0.375em;
+	}
+	code {
+		font-size: 0.875em;
+	}
+	h2 code {
+		font-size: 0.875em;
+	}
+	h3 code {
+		font-size: 0.9em;
+	}
+	pre {
+		font-size: 0.875em;
+		line-height: 1.71;
+		margin-top: 1.71em;
+		margin-bottom: 1.71em;
+		border-radius: r6em;
+		padding-top: 0.86em;
+		padding-inline-end: 1.14em;
+		padding-bottom: 0.86em;
+		padding-inline-start: 1.14em;
+	}
+	ol {
+		margin-top: 1.25em;
+		margin-bottom: 1.25em;
+		padding-inline-start: 1.625em;
+	}
+	ul {
+		margin-top: 1.25em;
+		margin-bottom: 1.25em;
+		padding-inline-start: 1.625em;
+	}
+	li {
+		margin-top: 0.5em;
+		margin-bottom: 0.5em;
+	}
+	ol > li {
+		padding-inline-start: 0.375em;
+	}
+	ul > li {
+		padding-inline-start: 0.375em;
+	}
+	> ul > li p {
+		margin-top: 0.75em;
+		margin-bottom: 0.75em;
+	}
+	> ul > li > p:first-child {
+		margin-top: 1.25em;
+	}
+	> ul > li > p:last-child {
+		margin-bottom: 1.25em;
+	}
+	> ol > li > p:first-child {
+		margin-top: 1.25em;
+	}
+	> ol > li > p:last-child {
+		margin-bottom: 1.25em;
+	}
+	ul ul,
+	ul ol,
+	ol ul,
+	ol ol {
+		margin-top: 0.75em;
+		margin-bottom: 0.75em;
+	}
+	dl {
+		margin-top: 1.25em;
+		margin-bottom: 1.25em;
+	}
+	dt {
+		margin-top: 1.25em;
+	}
+	dd {
+		margin-top: 0.5em;
+		padding-inline-start: 1.625em;
+	}
+	hr {
+		margin-top: 3em;
+		margin-bottom: 3em;
+	}
+	hr + * {
+		margin-top: 0;
+	}
+	h2 + * {
+		margin-top: 0;
+	}
+	h3 + * {
+		margin-top: 0;
+	}
+	h4 + * {
+		margin-top: 0;
+	}
+	table {
+		font-size: 0.875em;
+		line-height: 1.71;
+	}
+	thead th {
+		padding-inline-end: 0.57em;
+		padding-bottom: 0.57em;
+		padding-inline-start: 0.57em;
+	}
+	thead th:first-child {
+		padding-inline-start: 0;
+	}
+	thead th:last-child {
+		padding-inline-end: 0;
+	}
+	tbody td,
+	tfoot td {
+		padding-top: 0.57em;
+		padding-inline-end: 0.57em;
+		padding-bottom: 0.57em;
+		padding-inline-start: 0.57em;
+	}
+	tbody td:first-child,
+	tfoot td:first-child {
+		padding-inline-start: 0;
+	}
+	tbody td:last-child,
+	tfoot td:last-child {
+		padding-inline-end: 0;
+	}
+	figure {
+		margin-top: 2em;
+		margin-bottom: 2em;
+	}
+	figure > * {
+		margin-top: 0;
+		margin-bottom: 0;
+	}
+	figcaption {
+		font-size: 0.875em;
+		line-height: 1.43;
+		margin-top: 0.86em;
+	}
+	/* { */
+	/*    > :first-child { */
+	/*      margin-top: 0 */
+	/*    } */
+	/*    > :last-child { */
+	/*      margin-bottom: 0 */
+	/*    } */
+	/* } */
+}

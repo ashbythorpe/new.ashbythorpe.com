@@ -1,0 +1,104 @@
+@import "../common.css";
+
+header {
+	background-color: black;
+	z-index: 50;
+	position: sticky;
+	top: 0;
+	width: 100%;
+}
+
+nav {
+	display: flex;
+	justify-content: space-between;
+	padding-inline: 1rem;
+	padding-block: 0.5rem;
+	height: 100%;
+	align-items: center;
+}
+
+#logo {
+	flex-shrink: 0;
+
+	a {
+		font-family: monospace;
+		color: grey;
+		text-decoration-line: underline;
+		text-decoration-color: black;
+
+		&:hover {
+			transition-property: color, text-decoration-color;
+			transition-timing-function: ease-in-out;
+			transition-duration: 300ms;
+			color: red;
+			text-decoration-color: yellow;
+		}
+	}
+}
+
+#navbar-items {
+	justify-self: center;
+	margin-inline: auto;
+	display: flex;
+	justify-content: space-evenly;
+	align-items: center;
+	gap: 0.5rem;
+
+	.navbar-item {
+		display: flex;
+		align-items: center;
+		border-radius: 0.375rem;
+		padding-inline: 0.25rem;
+		padding-block: 0.5rem;
+		font-weight: 500;
+		--icon-size: 1.5rem;
+
+    &.selected {
+      background-color: grey;
+    }
+
+		&:hover {
+			text-decoration-line: underline;
+			background-color: grey;
+		}
+
+		p {
+			display: none;
+		}
+	}
+}
+
+#github-container {
+	display: flex;
+  justify-content: end;
+  align-items: center;
+
+  a {
+    color: grey;
+    --icon-size: 1.5rem;
+
+    &:hover {
+      color: black;
+    }
+  }
+}
+
+@media (min-width: 48rem) {
+	#logo {
+		width: 25%;
+	}
+
+	#navbar-items {
+		gap: 1.5rem;
+
+		.navbar-item {
+			p {
+				display: block;
+			}
+		}
+	}
+
+	#github-container {
+		width: 25%;
+	}
+}

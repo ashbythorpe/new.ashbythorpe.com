@@ -1,0 +1,179 @@
+# Welcome, and how to make a website
+
+This blog is going to be a place where I can write about programming:
+experiences I've had, things I've made, even the occasional how-to every now
+and again.
+
+In today's post, I want to discuss the website you are in right now! It's going
+to be a fairly short one, and a fairly boring one: call it a test post. In
+future posts, I'd like to talk more about programming patterns and conventions,
+rather than the tools I've used.
+
+## Prior experience
+
+I was pretty new to full stack development before this project. However, I was
+_very_ experienced with [shiny](https://shiny.posit.co/), a full stack
+development framework in R. To be honest, shiny is pretty much the furthest you
+can get from traditional full stack tools: it is designed to be easy to use for
+small, simple web apps that have no real need for styling or speed (although
+this didn't stop me from producing
+[an absolutely gargantuan project](https://github.com/ashbythorpe/financialDataAnalysis)
+in the form of a shiny app).
+
+However, while experience in shiny does not lend itself to certain parts of the
+web developer's experience, it certainly helped in a few specific areas. For
+one, shiny is particularly keen on reactive programming, and the mild usage of
+reactive thinking in frameworks like React seemed almost trivial in comparison.
+Similarly, a module in shiny seemed equivalent to a web component in any other
+framework. More generally, I typically found the broader concepts of web
+development pretty easy to grasp, and more often had trouble with specific
+details or conventions of the framework at hand.
+
+## Software
+
+A personal site isn't that exciting of a project so rather than talking about
+how I made the site, I'd like to focus more on the specific tools I used, and
+the experience I had with
+each one.
+
+Notably, I won't mention TypeScript, not because it wasn't an amazing
+improvement to the horrors of JavaScript, but because everyone else who has
+ever used it will tell you the exact same thing.
+
+### Next.js
+
+The most obvious influence on a person's experience when building a website is
+the web framework they use, in my case [Next.js](https://nextjs.org/). I chose
+it because it seemed popular, simple and used React.
+
+To begin with, I was proved right: my website was set-up and deployed in an
+amazingly short period of time. The first few pages of my website were very
+simple, and as a result I found it very easy and quick to make, while still
+resulting in a very performative website.
+
+That all being said, I ran into a few issues once I started on the blog section,
+which, with its comment section, was the most complex part of the website.
+
+The first issue I ran into was a bit more of a niche one. All my blog posts are
+written in Markdown and rendered using [MDX](https://mdxjs.com/). MDX is, for
+the most part, a wonderful tool, essentially acting as a compiler for Markdown,
+and even allowing the embedding of custom components in your files (allowing
+for the [wonderful syntax highlighting](https://bright.codehike.org/) I use in
+my posts).
+
+However, I wanted a custom layout for each blog post, which would
+add some styling and a comment section to it. Normally, a `layout.tsx`
+file would allow me to share a layout between multiple pages. Unfortunately,
+I needed the name of each post in order to fetch the corresponding comments,
+and this information was not available inside a `layout.tsx` file. I didn't
+want to have to include code for the layout in every single file, but the
+alternative was barbaric: I would have to use a dynamic route segment, and
+manually render the MDX file for each layout. In the end, a template file and
+a simple shell script made breaking the rule of DRY much more palatable, and so
+I managed to avoid too much added complexity. However, I still felt like I was
+hacking around a problem that Next.js should have been able to solve on its own.
+
+The second issue that I repeatedly encountered was the idea of client and server
+components. I am quite sure that this is the most common issue developers face
+when introduced to the Next.js framework. Before working on the blog section,
+I had been able to dodge this issue by simply adding or removing a
+`"use client"` in any file that caused an error. Of course, this did not work
+in any situation that was even the slightest bit too complex, and I soon found
+myself overwhelmed by errors that I did not quite understand.
+
+Of course, I had a solid understanding of the client-server model in web
+applications, it was just Next.js's specific representation of this problem
+that baffled me. It took me a while to understand why the exact same code would
+work in one file and not in another. In fact, I found it extremely useful to
+unpack the ideas that Next.js provided and consider them in the context of the
+client-server model I was familiar with. For example, it seems quite obvious
+that to query a database on the client, you need to go through the server first
+(to hide credentials), but in practice many of my server-side components
+_could_ query my database directly, making this two-stop route seem
+counter-intuitive. This still frustrates me now, it seems to demonstrate that
+the abstractions provided by Next.js are leaky and overbearing.
+
+I would love to explore how other frameworks deal with this issue, and whether
+they provide a more clear separation of the client and server.
+
+### React
+
+Working with Next.js meant, of course, working with
+[React](https://reactjs.org/). This was by choice: as much as I was compelled
+by newer tools like [Svelte](https://svelte.dev/) and
+[SolidJS](https://www.solidjs.com/), React's popularity made it a more
+attractive choice for a first project.
+
+Although I had plenty to say about Next.js, my experience with React, was, for
+the most part, quite pleasant. I had a good grasp of the fundamentals of
+reactivity, which made the concepts that React put forward easy to master.
+Furthermore, it seemed to provide convenient solutions to many of the problems
+that I encountered while developing the website, such as prop drilling and
+optimistic state.
+
+One of the tools I most enjoyed using was server actions, which allowed me to
+skip over a lot of the pain involved with using forms. I think once of the
+reasons my experience with React was so positive was that my website was not
+complex enough to run into most of the foot-guns and pitfalls of React in
+larger projects. For example, the server actions would not work in the context
+of multi-part forms.
+
+### Prisma
+
+To interact with my database of users and comments, instead of opting for the
+traditional SQL approach, I decided to use [Prisma](https://www.prisma.io/), a
+database ORM that allowed me to query my data in a simpler, type-checking way.
+
+My initial experience with Prisma was a little painful. While the code itself
+was easy to understand, I had a little trouble using the tooling, especially
+when trying to update the database. I found myself often having to reset all
+my data to accommodate a small change in the structure of one of my tables.
+And even when I managed to update the remote database successfully, I found
+that the generated types would be out-of-date, generating diagnostics in my
+editor for perfectly valid queries.
+
+However, once I had gotten over these initial hurdles, I found Prisma to be a
+particularly powerful tool. It especially shined when I started to implement
+a reply system for my comments, which required a two self-referential relations
+that would be difficult to express using normal SQL, but were almost trivial
+to add in my schema file.
+
+```prisma
+model Comment {
+  id              Int       @id @default(autoincrement())
+  postId          Int
+  createdAt       DateTime  @default(now())
+  content         String
+  userId          String
+  replyId         Int?
+  originalReplyId Int?
+  blog            Blog      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replyTo         Comment?  @relation("reply", fields: [replyId], references: [id], onDelete: Cascade)
+  directReplies   Comment[] @relation("reply")
+  originalReplyTo Comment?  @relation("originalReply", fields: [originalReplyId], references: [id], onDelete: Cascade)
+  replies         Comment[] @relation("originalReply")
+}
+```
+
+``` =html
+<figcaption>
+  The Prisma schema for the `comment` table. While the first few fields are
+  fairly simple, the relations at the end would be much more difficult to
+  represent using SQL.
+</figcaption>
+```
+
+### Tailwind CSS
+
+The final notable tool that I relied upon was
+[Tailwind CSS](https://tailwindcss.com/). I had heard a lot of good things about
+Tailwind, and I was keen to try it out.
+
+I was not disappointed. Tailwind made me realise just how much I hated writing
+regular CSS. It was fast, very well-documented and fun to use, and for the first
+time, I enjoyed customising my components at what felt like double the speed.
+Above all, I enjoyed the _simplicity_ of it; it removed a barrier of abstraction
+that regular CSS ushers you behind, reducing the gap between the design in your
+head and the code you create. Once you reject the re-usability that regular
+CSS classes provide you with, you realise you didn't need it in the first place.

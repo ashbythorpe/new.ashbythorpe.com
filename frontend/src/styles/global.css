@@ -1,0 +1,14 @@
+@import "@fontsource/inter";
+
+:root {
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+
+  font-family: 'Inter', sans-serif;
+}
+
+:where(h1) {
+  margin-block: 0.67em;
+  font-size: 2em;
+}

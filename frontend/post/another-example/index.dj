@@ -1,0 +1,8 @@
+# Another example
+
+```javascript
+const x = 1;
+document.querySelector("a").addEventListener("click", () => {
+    console.log("kill yourself");
+});
+```
