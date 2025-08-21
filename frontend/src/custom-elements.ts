@@ -16,7 +16,10 @@ export function element(name: string, _templatePath: string): ClassDecorator {
     return decorator;
 }
 
-export const staticElement: (name: string, _templatePath: string) => ClassDecorator = element;
+export const staticElement: (
+    name: string,
+    _templatePath: string,
+) => ClassDecorator = element;
 
 export abstract class Component extends HTMLElement {
     static name: string;
@@ -27,11 +30,8 @@ export abstract class Component extends HTMLElement {
     shadowRoot: ShadowRoot;
 
     private static defineElement() {
-        this.__template = document.createElement("template");
-
-        if (this.__templateString === undefined) {
-            console.error(`Template not found for ${this.name}`);
-        } else{
+        if (this.__templateString !== undefined) {
+            this.__template = document.createElement("template");
             this.__template.innerHTML = this.__templateString;
         }
 
@@ -54,16 +54,28 @@ export abstract class Component extends HTMLElement {
         /* @ts-ignore */
         if (!this.constructor.__dev) {
             /* @ts-ignore */
-            if (this.shadowRoot !== null) {
-                return;
-            } else if (!HTMLTemplateElement.prototype.hasOwnProperty('shadowRootMode')) {
+            if (HTMLElement.prototype.hasOwnProperty("attachInternals")) {
+                const internals = this.attachInternals();
+
+                if (internals.shadowRoot) {
+                    this.shadowRoot = internals.shadowRoot;
+                    return;
+                }
+            }
+
+            if (
+                !HTMLTemplateElement.prototype.hasOwnProperty("shadowRootMode")
+            ) {
                 // Polyfill for browsers that don't support the `shadowrootmode` property
-                const template = this.querySelector("template[shadowrootmode='open']") as HTMLTemplateElement;
+                const template = this.querySelector(
+                    "template[shadowrootmode='open']",
+                ) as HTMLTemplateElement;
 
                 if (template !== null) {
-                    const shadowRoot = this.attachShadow({ mode: "open" })
+                    console.log("Polyfill time!");
+                    this.shadowRoot = this.attachShadow({ mode: "open" });
 
-                    shadowRoot.appendChild(template.content);
+                    this.shadowRoot.appendChild(template.content);
                     template.remove();
 
                     return;
