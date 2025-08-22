@@ -1,40 +1,55 @@
 <link rel="stylesheet" href="style.css" />
 <header>
   <nav>
-    <div id="logo">
-      <a href="/index.html">
-        <h1>ashbythorpe</h1>
-      </a>
+    <div id="logo" class="navbar-section">
+      <a href="/index.html">ashbythorpe</a>
     </div>
-    <div id="navbar-items">
-      <a href="/index.html" class="navbar-item" id="navbar-home">
-        <home-icon></home-icon>
-        <p>Home</p>
-      </a>
-      <a href="/about/index.html" class="navbar-item" id="navbar-about">
-        <info-icon></info-icon>
-        <p>About me</p>
-      </a>
-      <a href="/projects/index.html" class="navbar-item" id="navbar-projects">
-        <code-bracket-icon></code-bracket-icon>
-        <p>Projects</p>
-      </a>
-      <a href="/blog/index.html" class="navbar-item" id="navbar-blog">
-        <pencil-square-icon></pencil-square-icon>
-        <p>Home</p>
-      </a>
-    </div>
-    <div id="github-container" class="flex-shrink-0 md:w-1/4 flex justify-end">
-      <div
-        class="items-center md:border-l md:border-gray-400 pl-2 md:pl-4 h-full justify-self-end"
+    <div id="navbar-items" class="navbar-section">
+      <a
+        href="/index.html"
+        class="navbar-item"
+        id="navbar-home"
+        aria-label="Home"
       >
+        <home-icon></home-icon>
+        <span>Home</span>
+      </a>
+      <a
+        href="/about/index.html"
+        class="navbar-item"
+        id="navbar-about"
+        aria-label="About me"
+      >
+        <info-icon></info-icon>
+        <span>About me</span>
+      </a>
+      <a
+        href="/projects/index.html"
+        class="navbar-item"
+        id="navbar-projects"
+        aria-label="Projects"
+      >
+        <code-bracket-icon></code-bracket-icon>
+        <span>Projects</span>
+      </a>
+      <a
+        href="/blog/index.html"
+        class="navbar-item"
+        id="navbar-blog"
+        aria-label="Blog"
+      >
+        <pencil-square-icon></pencil-square-icon>
+        <span>Blog</span>
+      </a>
+    </div>
+    <div id="github-container" class="navbar-section">
         <a
           href="https://github.com/ashbythorpe"
           class="text-black-700 hover:text-black-900"
+          aria-label="GitHub"
         >
           <github-icon class="w-6 h-auto"></github-icon>
         </a>
       </div>
-    </div>
   </nav>
 </header>

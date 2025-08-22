@@ -1,7 +1,11 @@
-@import "../common.css";
+a {
+	color: inherit;
+	-webkit-text-decoration: inherit;
+	text-decoration: inherit;
+}
 
 header {
-	background-color: black;
+	background-color: var(--color-black-100);
 	z-index: 50;
 	position: sticky;
 	top: 0;
@@ -15,23 +19,30 @@ nav {
 	padding-block: 0.5rem;
 	height: 100%;
 	align-items: center;
+
+	.navbar-section {
+		flex: 1;
+	}
 }
 
 #logo {
 	flex-shrink: 0;
+	display: block;
 
 	a {
-		font-family: monospace;
-		color: grey;
+		flex: 0;
+		font-family: var(--font-mono);
+		font-size: 1.25rem;
+		color: var(--color-black-600);
 		text-decoration-line: underline;
-		text-decoration-color: black;
+		text-decoration-color: var(--color-black-100);
 
 		&:hover {
 			transition-property: color, text-decoration-color;
 			transition-timing-function: ease-in-out;
 			transition-duration: 300ms;
-			color: red;
-			text-decoration-color: yellow;
+			color: var(--color-cerise-red-700);
+			text-decoration-color: var(--color-energy-yellow-300);
 		}
 	}
 }
@@ -40,9 +51,11 @@ nav {
 	justify-self: center;
 	margin-inline: auto;
 	display: flex;
-	justify-content: space-evenly;
+	justify-content: center;
 	align-items: center;
 	gap: 0.5rem;
+	flex-grow: 2;
+	margin-inline: auto;
 
 	.navbar-item {
 		display: flex;
@@ -51,18 +64,28 @@ nav {
 		padding-inline: 0.25rem;
 		padding-block: 0.5rem;
 		font-weight: 500;
-		--icon-size: 1.5rem;
 
-    &.selected {
-      background-color: grey;
-    }
+		&.selected {
+			background-color: rgb(from var(--color-black-700) r g b / 0.1);
+		}
 
 		&:hover {
 			text-decoration-line: underline;
-			background-color: grey;
+			background-color: rgb(from var(--color-black-700) r g b / 0.15);
 		}
 
-		p {
+		home-icon, info-icon, code-bracket-icon, pencil-square-icon {
+			height: 1.5rem;
+
+			svg {
+				width: 1.5rem;
+				height: 1.5rem;
+			}
+		}
+
+
+		span {
+			margin-left: 0.5rem;
 			display: none;
 		}
 	}
@@ -70,35 +93,39 @@ nav {
 
 #github-container {
 	display: flex;
-  justify-content: end;
-  align-items: center;
+	justify-content: end;
+	align-items: center;
 
-  a {
-    color: grey;
-    --icon-size: 1.5rem;
+	a {
+		color: var(--color-black-700);
+		text-align: center;
+		display: flex;
+		align-items: center;
 
-    &:hover {
-      color: black;
-    }
-  }
+		&:hover {
+			color: var(--color-black-900);
+		}
+
+		github-icon {
+			margin-block: auto;
+			height: 1.5rem;
+
+			svg {
+				width: 1.5rem;
+				height: 1.5rem;
+			}
+		}
+	}
 }
 
 @media (min-width: 48rem) {
-	#logo {
-		width: 25%;
-	}
-
 	#navbar-items {
 		gap: 1.5rem;
 
 		.navbar-item {
-			p {
+			span {
 				display: block;
 			}
 		}
-	}
-
-	#github-container {
-		width: 25%;
 	}
 }

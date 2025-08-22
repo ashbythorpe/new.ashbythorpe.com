@@ -1,14 +1,69 @@
-@import "@fontsource/inter";
+@import "./preflight.css";
 
 :root {
-  --breakpoint-sm: 40rem;
-  --breakpoint-md: 48rem;
-  --breakpoint-lg: 64rem;
+	--breakpoint-sm: 40rem;
+	--breakpoint-md: 48rem;
+	--breakpoint-lg: 64rem;
 
-  font-family: 'Inter', sans-serif;
-}
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
-:where(h1) {
-  margin-block: 0.67em;
-  font-size: 2em;
+	font-family: var(--font-inter);
+
+	/* colors */
+	--color-cerise-red-50: #fdf2f7;
+	--color-cerise-red-100: #fce7f1;
+	--color-cerise-red-200: #fbcfe4;
+	--color-cerise-red-300: #f9a8cc;
+	--color-cerise-red-400: #f472aa;
+	--color-cerise-red-500: #ec488a;
+	--color-cerise-red-600: #dc2e6b; /* default */
+	--color-cerise-red-700: #be184d;
+	--color-cerise-red-800: #9d1740;
+	--color-cerise-red-900: #831839;
+	--color-cerise-red-950: #50071d;
+	--color-energy-yellow-50: #fdfbe9;
+	--color-energy-yellow-100: #fdf7c4;
+	--color-energy-yellow-200: #fbeb8d;
+	--color-energy-yellow-300: #f9dc5c; /* default */
+	--color-energy-yellow-400: #f4c31b;
+	--color-energy-yellow-500: #e4ab0e;
+	--color-energy-yellow-600: #c58309;
+	--color-energy-yellow-700: #9d5d0b;
+	--color-energy-yellow-800: #824a11;
+	--color-energy-yellow-900: #6f3d14;
+	--color-energy-yellow-950: #401f08;
+	--color-indigo-50: #f0f4fd;
+	--color-indigo-100: #e4ecfb;
+	--color-indigo-200: #cfdbf6;
+	--color-indigo-300: #b1c3f0;
+	--color-indigo-400: #92a2e7;
+	--color-indigo-500: #7784dd;
+	--color-indigo-600: #6369d1; /* default */
+	--color-indigo-700: #4c50b6;
+	--color-indigo-800: #404493;
+	--color-indigo-900: #3a3f75;
+	--color-indigo-950: #222444;
+	--color-jaffa-50: #fff6ed;
+	--color-jaffa-100: #ffebd5;
+	--color-jaffa-200: #fed3aa;
+	--color-jaffa-300: #fcb375;
+	--color-jaffa-400: #fa8334; /* default */
+	--color-jaffa-500: #f86717;
+	--color-jaffa-600: #e94d0d;
+	--color-jaffa-700: #c1380d;
+	--color-jaffa-800: #992d13;
+	--color-jaffa-900: #7c2812;
+	--color-jaffa-950: #431107;
+	--color-black-50: #f6f6f6;
+	--color-black-100: #e7e7e7;
+	--color-black-200: #d1d1d1;
+	--color-black-300: #b0b0b0;
+	--color-black-400: #888888;
+	--color-black-500: #6d6d6d;
+	--color-black-600: #5d5d5d;
+	--color-black-700: #4f4f4f;
+	--color-black-800: #454545;
+	--color-black-900: #3d3d3d;
+	--color-black-950: #020202; /* default */
 }

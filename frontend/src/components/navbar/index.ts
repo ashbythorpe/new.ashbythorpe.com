@@ -1,11 +1,12 @@
-import { Component, staticElement } from "../../custom-elements";
+import { Component, element, staticElement } from "../../custom-elements";
 import "../icons/home.ts";
 import "../icons/info.ts";
 import "../icons/code-bracket.ts";
 import "../icons/pencil-square.ts";
 import "../icons/github.ts";
 
-@staticElement("nav-bar", "./index.html")
+@staticElement
+@element("nav-bar", "./index.html")
 export default class extends Component {
     static observedAttributes = ["selected"];
 

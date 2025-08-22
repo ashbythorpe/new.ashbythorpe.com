@@ -1,4 +1,6 @@
-import { Component, staticElement } from "../../custom-elements";
+import { Component, element, noShadowRoot, staticElement } from "../../custom-elements";
 
-@staticElement("info-icon", "./info.html")
+@noShadowRoot
+@staticElement
+@element("info-icon", "./info.html")
 export default class extends Component {};

@@ -3,16 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <link rel="stylesheet" href="./src/styles/global.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + TS</title>
+    <title>Ashby Thorpe</title>
+    <script type="module" src="./src/main.ts"></script>
   </head>
   <body>
-    <nav-bar selected="home"></nav-bar>
-    <div id="app">
-      <my-component><span slot="name">Ashby</span></my-component>
-      <other-component></other-component>
+    <div id="content">
+      <nav-bar selected="home"></nav-bar>
+      <div
+        id="container"
+        className="pt-4 pb-2 m-2 max-w-[1000px] items-center h-full flex-grow flex flex-col"
+      >
+        <div id="text-container">
+          <div
+            id="header-container"
+            className="w-1/2 border-b border-b-gray-400/70 items-center flex flex-col pb-2 mb-4"
+          >
+            <h1 className="text-3xl text-black-900 font-mono">Hi!</h1>
+          </div>
+          <p>
+            I&apos;m Ashby Thorpe. I study Mathematics and Computer Science at
+            the University of Bristol. I have experience building complex
+            projects in a variety of programming languages. This website
+            features some of my work.
+          </p>
+        </div>
+        <img src="/bottom_pattern.svg" alt="waves" width="900" height="900" />
+      </div>
     </div>
-    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

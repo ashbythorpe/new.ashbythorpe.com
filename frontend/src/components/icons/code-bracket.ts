@@ -1,4 +1,6 @@
-import { Component, staticElement } from "../../custom-elements";
+import { Component, element, noShadowRoot, staticElement } from "../../custom-elements";
 
-@staticElement("code-bracket-icon", "./code-bracket.html")
+@noShadowRoot
+@staticElement
+@element("code-bracket-icon", "./code-bracket.html")
 export default class extends Component {};

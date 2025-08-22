@@ -1,4 +1,6 @@
-import { Component, staticElement } from "../../custom-elements";
+import { Component, element, noShadowRoot, staticElement } from "../../custom-elements";
 
-@staticElement("github-icon", "./github.html")
+@noShadowRoot
+@staticElement
+@element("github-icon", "./github.html")
 export default class extends Component {};
