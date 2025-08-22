@@ -64,6 +64,7 @@ nav {
 		padding-inline: 0.25rem;
 		padding-block: 0.5rem;
 		font-weight: 500;
+		text-wrap: nowrap;
 
 		&.selected {
 			background-color: rgb(from var(--color-black-700) r g b / 0.1);
@@ -96,6 +97,10 @@ nav {
 	justify-content: end;
 	align-items: center;
 
+	#github-border {
+		height: 100%;
+	}
+
 	a {
 		color: var(--color-black-700);
 		text-align: center;
@@ -127,5 +132,12 @@ nav {
 				display: block;
 			}
 		}
+	}
+
+	#github-border {
+		padding-left: 1rem;
+		border-left-style: solid;
+		border-left-width: 1px;
+		border-left-color: oklch(70.7% 0.022 261.325);
 	}
 }
