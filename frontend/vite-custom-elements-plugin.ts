@@ -1,7 +1,7 @@
 import type { IndexHtmlTransformContext, Plugin } from "vite";
 import { access, constants, readFile } from "node:fs/promises";
 import { resolve } from "path";
-import ts from "typescript";
+import ts, { SyntaxKind } from "typescript";
 import { HTMLElement, parse } from "node-html-parser";
 import MagicString from "magic-string";
 import { dirname } from "node:path";
@@ -13,6 +13,7 @@ interface ComponentBundle {
     sourceFile: string;
     template: string;
     cssFiles: Set<string>;
+    shadowRoot: boolean;
 }
 
 interface ElementDefinition {
@@ -21,6 +22,7 @@ interface ElementDefinition {
     sourceFile: string;
     classNode: ts.ClassDeclaration;
     static: boolean;
+    shadowRoot: boolean;
 }
 
 interface PluginOptions {
@@ -80,6 +82,9 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                     const templateVarName =
                         toCamelCase(element.name) + "Template";
 
+                    console.log(element.name);
+                    console.log(element.static);
+                    console.log(isDev);
                     if (!element.static || isDev) {
                         imports.push(
                             `import ${templateVarName} from "${templateId}";`,
@@ -189,12 +194,19 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                                 // First, recursively process any nested components in the template
                                 await processComponentsAtLevel(templateElement);
 
-                                // Then render this component
-                                const shadowTemplate = `<template shadowrootmode="open">${templateElement.innerHTML}</template>`;
-                                element.insertAdjacentHTML(
-                                    "afterbegin",
-                                    shadowTemplate,
-                                );
+                                if (bundle.shadowRoot) {
+                                    // Then render this component
+                                    const shadowTemplate = `<template shadowrootmode="open">${templateElement.innerHTML}</template>`;
+                                    element.insertAdjacentHTML(
+                                        "afterbegin",
+                                        shadowTemplate,
+                                    );
+                                } else {
+                                    element.insertAdjacentHTML(
+                                        "afterbegin",
+                                        templateElement.innerHTML,
+                                    );
+                                }
 
                                 processedElements.add(element);
                                 hasChanges = true;
@@ -260,9 +272,6 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                     bundle.templatePath === ctx.file ||
                     bundle.cssFiles.has(ctx.file);
 
-                console.log(bundle.cssFiles);
-                console.log(ctx.file);
-
                 if (shouldReload) {
                     await reloadBundle(bundle);
 
@@ -301,6 +310,7 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
             sourceFile,
             template,
             cssFiles,
+            shadowRoot: element.shadowRoot,
         };
     }
 
@@ -348,7 +358,7 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                 bundle: true,
                 minify: true,
                 write: false,
-                metafile: true
+                metafile: true,
             });
 
             const minified = outputFiles[0].text;
@@ -420,31 +430,14 @@ function parseElementDecorators(
             const decorators = ts.getDecorators?.(node);
 
             if (decorators) {
-                for (const decorator of decorators) {
-                    if (
-                        ts.isCallExpression(decorator.expression) &&
-                        ts.isIdentifier(decorator.expression.expression) &&
-                        (decorator.expression.expression.text === "element" ||
-                            decorator.expression.expression.text ===
-                                "staticElement")
-                    ) {
-                        const args = decorator.expression.arguments;
-                        if (
-                            args.length >= 2 &&
-                            ts.isStringLiteral(args[0]) &&
-                            ts.isStringLiteral(args[1])
-                        ) {
-                            elements.push({
-                                name: args[0].text,
-                                templatePath: args[1].text,
-                                sourceFile: filePath,
-                                classNode: node,
-                                static:
-                                    decorator.expression.expression.text ===
-                                    "staticElement",
-                            });
-                        }
-                    }
+                const definition = parseElementDefinition(
+                    node,
+                    decorators,
+                    filePath,
+                );
+
+                if (definition !== null) {
+                    elements.push(definition);
                 }
             }
         }
@@ -454,6 +447,58 @@ function parseElementDecorators(
 
     visit(sourceFile);
     return elements;
+}
+
+function parseElementDefinition(
+    node: ts.ClassDeclaration,
+    decorators: readonly ts.Decorator[],
+    filePath: string,
+): ElementDefinition | null {
+    let definition: Omit<ElementDefinition, "static" | "shadowRoot"> | null =
+        null;
+    let isStatic = false;
+    let shadowRoot = true;
+
+    for (const decorator of decorators) {
+        if (
+            ts.isCallExpression(decorator.expression) &&
+            ts.isIdentifier(decorator.expression.expression)
+        ) {
+            const decoratorName = decorator.expression.expression.text;
+            if (decoratorName === "element") {
+                const args = decorator.expression.arguments;
+                if (
+                    args.length >= 2 &&
+                    ts.isStringLiteral(args[0]) &&
+                    ts.isStringLiteral(args[1])
+                ) {
+                    definition = {
+                        name: args[0].text,
+                        templatePath: args[1].text,
+                        sourceFile: filePath,
+                        classNode: node,
+                    };
+                }
+            }
+        } else if (ts.isIdentifier(decorator.expression)) {
+            const decoratorName = decorator.expression.text;
+            if (decoratorName === "staticElement") {
+                isStatic = true;
+            } else if (decoratorName === "noShadowRoot") {
+                shadowRoot = false;
+            }
+        }
+    }
+
+    if (definition !== null) {
+        return {
+            ...definition,
+            static: isStatic,
+            shadowRoot,
+        };
+    } else {
+        return null;
+    }
 }
 
 function toCamelCase(str: string): string {

@@ -16,13 +16,20 @@ export function element(name: string, _templatePath: string): ClassDecorator {
     return decorator;
 }
 
-export const staticElement: (
-    name: string,
-    _templatePath: string,
-) => ClassDecorator = element;
+export function staticElement<TFunction extends Function>(target: TFunction): TFunction | void {
+    return target;
+}
+
+export function noShadowRoot<TFunction extends Function>(target: TFunction): TFunction | void {
+    /* @ts-ignore */
+    target.__shadowRoot = false;
+
+    return target;
+}
 
 export abstract class Component extends HTMLElement {
     static name: string;
+    static __shadowRoot: boolean = true;
     static __templateString?: string;
     static __template: HTMLTemplateElement;
 
@@ -89,12 +96,27 @@ export abstract class Component extends HTMLElement {
             return;
         }
 
+
+        /* @ts-ignore */
+        if (!this.constructor.__shadowRoot) {
+            return;
+        }
+
         this.shadowRoot = this.attachShadow({ mode: "open" });
 
         /* @ts-ignore */
         const template = this.constructor.__template.cloneNode(true);
 
         this.shadowRoot.appendChild(template.content);
+    }
+
+    connectedCallback() {
+        /* @ts-ignore */
+        if (!this.constructor.__shadowRoot && this.constructor.__dev) {
+            /* @ts-ignore */
+            const template = this.constructor.__template.cloneNode(true)
+            this.append(template.content);
+        }
     }
 
     get name(): string {

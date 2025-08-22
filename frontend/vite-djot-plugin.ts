@@ -39,7 +39,6 @@ export function djotPlugin(options: PluginOptions): Plugin {
             if (!dev) {
                 for (const file of djotFiles) {
                     await buildDjotFile(file, template);
-                    console.log(file);
                 }
             }
         },
@@ -69,8 +68,6 @@ export function djotPlugin(options: PluginOptions): Plugin {
                 djotInputs[inputName] = htmlPath;
             }
 
-            console.log(djotInputs);
-
             if (!config.build) config.build = {};
             if (!config.build.rollupOptions) config.build.rollupOptions = {};
             if (!config.build.rollupOptions.input)
@@ -87,19 +84,11 @@ export function djotPlugin(options: PluginOptions): Plugin {
                     ...djotInputs,
                 };
             }
-
-            console.log(config.build.rollupOptions.input);
         },
 
         async handleHotUpdate({ file }) {
             if (file.endsWith(".dj") && trackedFiles.has(file)) {
-                console.log(`Rebuilding ${file}`);
                 await buildDjotFile(file, template);
-
-                const relativePath = relative(root, file);
-                const htmlPath = relativePath.replace(/\.dj$/, ".html");
-
-                console.log(htmlPath);
 
                 return [];
             }
