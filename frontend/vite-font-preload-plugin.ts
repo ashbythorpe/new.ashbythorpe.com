@@ -39,12 +39,7 @@ export function simpleFontPreloadPlugin(fonts: Font[] = []): Plugin {
                             .replace(".woff", "")
                             .replace(".ttf", "");
 
-                        return (
-                            assetName.includes(importName) ||
-                            assetName
-                                .toLowerCase()
-                                .includes(fontConfig.name?.toLowerCase())
-                        );
+                        return assetName.includes(importName);
                     });
 
                     if (matchingAsset) {
@@ -55,10 +50,10 @@ export function simpleFontPreloadPlugin(fonts: Font[] = []): Plugin {
                                 as: "font",
                                 type: fontConfig.type,
                                 href: `/${matchingAsset}`,
-                                crossorigin: "anonymous"
+                                crossorigin: "anonymous",
                             },
-                            injectTo: "head"
-                        })
+                            injectTo: "head",
+                        });
                     }
                 });
 

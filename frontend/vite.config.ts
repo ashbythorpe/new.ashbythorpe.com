@@ -33,7 +33,7 @@ export default defineConfig({
         simpleFontPreloadPlugin([
             {
                 name: "inter",
-                import: "@fontsource/inter/files/inter-latin-ext-400-normal.woff2",
+                import: "@fontsource/inter/files/inter-latin-400-normal.woff2",
                 type: "font/woff2",
             },
         ]),
