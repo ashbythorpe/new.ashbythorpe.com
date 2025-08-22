@@ -21,14 +21,13 @@ export function staticElement<TFunction extends Function>(target: TFunction): TF
 }
 
 export function noShadowRoot<TFunction extends Function>(target: TFunction): TFunction | void {
-    /* @ts-ignore */
-    target.__shadowRoot = false;
-
     return target;
 }
 
 export abstract class Component extends HTMLElement {
     static name: string;
+    static __dev: boolean = false;
+    static __static: boolean = false;
     static __shadowRoot: boolean = true;
     static __templateString?: string;
     static __template: HTMLTemplateElement;
@@ -37,7 +36,7 @@ export abstract class Component extends HTMLElement {
     shadowRoot: ShadowRoot;
 
     private static defineElement() {
-        if (this.__templateString !== undefined) {
+        if (this.__templateString !== undefined && (!this.__static || this.__dev)) {
             this.__template = document.createElement("template");
             this.__template.innerHTML = this.__templateString;
         }
@@ -61,8 +60,16 @@ export abstract class Component extends HTMLElement {
         /* @ts-ignore */
         if (!this.constructor.__dev) {
             /* @ts-ignore */
+            if (!this.constructor.__shadowRoot) {
+                console.log("I'm in here")
+                return;
+            }
+
+            /* @ts-ignore */
             if (HTMLElement.prototype.hasOwnProperty("attachInternals")) {
                 const internals = this.attachInternals();
+                console.log(this.name);
+                console.log(internals);
 
                 if (internals.shadowRoot) {
                     this.shadowRoot = internals.shadowRoot;
@@ -95,7 +102,6 @@ export abstract class Component extends HTMLElement {
             console.error(`Template not found for ${this.name}`);
             return;
         }
-
 
         /* @ts-ignore */
         if (!this.constructor.__shadowRoot) {

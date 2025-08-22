@@ -1,7 +1,7 @@
 import type { IndexHtmlTransformContext, Plugin } from "vite";
 import { access, constants, readFile } from "node:fs/promises";
 import { resolve } from "path";
-import ts, { SyntaxKind } from "typescript";
+import ts from "typescript";
 import { HTMLElement, parse } from "node-html-parser";
 import MagicString from "magic-string";
 import { dirname } from "node:path";
@@ -82,22 +82,30 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                     const templateVarName =
                         toCamelCase(element.name) + "Template";
 
-                    console.log(element.name);
-                    console.log(element.static);
-                    console.log(isDev);
                     if (!element.static || isDev) {
                         imports.push(
                             `import ${templateVarName} from "${templateId}";`,
                         );
                     }
 
+                    let additions = "";
                     if (!element.static || isDev) {
-                        let additions = `\n    static __templateString = ${templateVarName};\n`;
+                        additions += `\n    static __templateString = ${templateVarName};\n`;
 
                         if (isDev) {
-                            additions += `\n    static __dev = true;\n`;
+                            additions += `    static __dev = true;\n`;
                         }
+                    }
 
+                    if (element.static) {
+                        additions += `   static __static = true;\n`
+                    }
+
+                    if (!element.shadowRoot) {
+                        additions += `   static __shadowRoot = false;\n`
+                    }
+
+                    if (additions !== "") {
                         s.appendLeft(element.classNode.members.pos, additions);
                     }
 
