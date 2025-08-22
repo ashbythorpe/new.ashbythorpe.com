@@ -121,7 +121,7 @@ export abstract class Component extends HTMLElement {
         if (!this.constructor.__shadowRoot && this.constructor.__dev) {
             /* @ts-ignore */
             const template = this.constructor.__template.cloneNode(true)
-            this.append(template.content);
+            this.replaceChildren(template.content);
         }
     }
 
