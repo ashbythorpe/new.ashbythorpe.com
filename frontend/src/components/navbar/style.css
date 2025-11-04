@@ -4,12 +4,15 @@ a {
 	text-decoration: inherit;
 }
 
-header {
-	background-color: var(--color-black-100);
+:host {
 	z-index: 50;
 	position: sticky;
 	top: 0;
+}
+
+header {
 	width: 100%;
+	background-color: var(--color-black-100);
 }
 
 nav {
@@ -26,6 +29,7 @@ nav {
 }
 
 #logo {
+	flex: 3;
 	flex-shrink: 0;
 	display: block;
 
@@ -75,7 +79,7 @@ nav {
 			background-color: rgb(from var(--color-black-700) r g b / 0.15);
 		}
 
-		home-icon, info-icon, code-bracket-icon, pencil-square-icon {
+		.icon {
 			height: 1.5rem;
 
 			svg {
@@ -124,6 +128,9 @@ nav {
 }
 
 @media (min-width: 48rem) {
+	#logo {
+		flex: 1;
+	}
 	#navbar-items {
 		gap: 1.5rem;
 

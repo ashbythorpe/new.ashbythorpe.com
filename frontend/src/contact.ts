@@ -1,0 +1,9 @@
+import "./components/navbar/index.ts"
+import "./styles/contact.css"
+import "./components/icons/mail.ts"
+import "./components/icons/github.ts"
+import "./components/icons/linkedin.ts"
+import "./components/icons/document.ts"
+import "./components/diamond/index.ts"
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/700.css";

@@ -2,34 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ashby Thorpe</title>
     <script type="module" src="./src/main.ts"></script>
   </head>
   <body>
-    <div id="content">
-      <nav-bar selected="home"></nav-bar>
-      <div
-        id="container"
-        className="pt-4 pb-2 m-2 max-w-[1000px] items-center h-full flex-grow flex flex-col"
-      >
-        <div id="text-container">
-          <div
-            id="header-container"
-            className="w-1/2 border-b border-b-gray-400/70 items-center flex flex-col pb-2 mb-4"
-          >
-            <h1 className="text-3xl text-black-900 font-mono">Hi!</h1>
-          </div>
-          <p>
-            I&apos;m Ashby Thorpe. I study Mathematics and Computer Science at
-            the University of Bristol. I have experience building complex
-            projects in a variety of programming languages. This website
-            features some of my work.
-          </p>
+    <nav-bar selected="home"></nav-bar>
+    <main>
+      <div id="text-container">
+        <div
+          id="header-container"
+          className="w-1/2 border-b border-b-gray-400/70 items-center flex flex-col pb-2 mb-4"
+        >
+          <h1 className="text-3xl text-black-900 font-mono">Hi!</h1>
         </div>
-        <bottom-pattern></bottom-pattern>
+        <p>
+          I&apos;m Ashby Thorpe. I study Mathematics and Computer Science at the
+          University of Bristol. I have experience building complex projects in
+          a variety of programming languages. This website features some of my
+          work.
+        </p>
       </div>
-    </div>
+      <bottom-pattern></bottom-pattern>
+    </main>
   </body>
 </html>

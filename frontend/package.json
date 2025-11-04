@@ -15,7 +15,8 @@
     "node-html-parser": "^7.0.1",
     "shiki": "^3.10.0",
     "typescript": "~5.8.3",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "wrangler": "^4.32.0"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.6"

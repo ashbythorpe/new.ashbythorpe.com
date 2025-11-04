@@ -1,0 +1,64 @@
+@import "./global.css";
+
+body {
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+}
+
+main {
+	flex: 1;
+	padding-top: 2rem;
+	padding-bottom: 1rem;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: center;
+}
+
+#content {
+	h1 {
+		font-size: 1.25rem;
+		font-weight: 700;
+		padding-bottom: 1rem;
+		font-family: "Inter", monospace;
+	}
+}
+
+#contact-list {
+	list-style: none;
+
+	.icon {
+		display: inline-block;
+	}
+
+	a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		text-align: center;
+		color: var(--color-black-900);
+
+		&:hover {
+			color: var(--color-black-500);
+		}
+
+    &:visited {
+      color: var(--color-black-1000)
+    }
+	}
+
+	svg {
+		width: 1.5rem;
+		height: 1.5rem;
+	}
+}
+
+diamond-pattern {
+	width: 100%;
+
+	svg {
+    max-height: 500px;
+		margin-inline: auto;
+	}
+}

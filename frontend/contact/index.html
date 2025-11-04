@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.ico" />
+    <title>Contact</title>
+    <script type="module" src="../src/contact.ts"></script>
+  </head>
+  <body>
+    <nav-bar selected="contact"></nav-bar>
+    <main>
+      <div id="content">
+        <h1 className="text-2xl text-gray-700 underline mt-4 my-4">
+          Get in touch!
+        </h1>
+        <ul id="contact-list">
+          <li>
+            <a href="mailto:contact@ashbythorpe.com">
+              <mail-icon class="icon"></mail-icon>
+              contact@ashbythorpe.com
+            </a>
+          </li>
+          <li>
+            <a href="https://github.com/ashbythorpe">
+              <github-icon class="icon"></github-icon>
+              ashbythorpe
+            </a>
+          </li>
+          <li>
+            <a href="https://www.linkedin.com/in/ashbythorpe/">
+              <linkedin-icon class="icon"></linkedin-icon>
+              ashbythorpe
+            </a>
+          </li>
+          <li>
+            <a href="/cv.pdf" download="Ashby Thorpe - CV.pdf">
+              <document-icon class="icon"></document-icon>
+              CV
+            </a>
+          </li>
+        </ul>
+      </div>
+      <diamond-pattern></diamond-pattern>
+    </main>
+  </body>
+</html>

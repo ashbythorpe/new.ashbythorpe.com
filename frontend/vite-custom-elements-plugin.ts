@@ -98,11 +98,11 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                     }
 
                     if (element.static) {
-                        additions += `   static __static = true;\n`
+                        additions += `    static __static = true;\n`
                     }
 
                     if (!element.shadowRoot) {
-                        additions += `   static __shadowRoot = false;\n`
+                        additions += `    static __shadowRoot = false;\n`
                     }
 
                     if (additions !== "") {
