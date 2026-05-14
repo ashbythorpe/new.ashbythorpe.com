@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for backend-earnest-voice-5552 on 2026-05-14T00:44:39+01:00
+# fly.toml app configuration file generated for backend-earnest-voice-5552 on 2026-05-14T00:57:39Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -7,16 +7,18 @@ app = 'backend-earnest-voice-5552'
 primary_region = 'lhr'
 
 [build]
-  [build.args]
-    GO_VERSION = '1.26.0'
 
 [env]
-  DB_PATH = "/data/app.db"
+  DB_PATH = '/data/app.db'
+
+[[mounts]]
+  source = 'ashbythorpe_data'
+  destination = '/data'
 
 [http_service]
   internal_port = 3000
   force_https = true
-  auto_stop_machines = false
+  auto_stop_machines = 'off'
   auto_start_machines = true
   min_machines_running = 1
   processes = ['app']
@@ -26,7 +28,3 @@ primary_region = 'lhr'
   cpu_kind = 'shared'
   cpus = 1
   memory_mb = 256
-
-[mounts]
-  source = "ashbythorpe_data"
-  destination = "/data"
