@@ -1,0 +1,18 @@
+<link rel="stylesheet" href="style.css" />
+<button id="show-replies">
+  <div class="replies-label replies-closed">
+    <slot name="num-replies">0</slot>&nbsp;replies
+    <include src="../../icons/chevron-down.svg" class="icon"></include>
+  </div>
+  <div class="replies-label replies-open">
+    Hide replies
+    <include src="../../icons/chevron-up.svg" class="icon" />
+  </div>
+</button>
+<div class="replies-open">
+  <p class="replies-loading" id="loading">
+    Loading...
+  </p>
+  <div id="replies-list">
+  </div>
+</div>

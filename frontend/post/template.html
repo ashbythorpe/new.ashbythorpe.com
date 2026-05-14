@@ -4,11 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{TITLE}}</title>
-    <link href="/post/style.css" rel="stylesheet">
+    <script type="module" src="/src/post.ts"></script>
   </head>
   <body>
+    <nav-bar></nav-bar>
+    <div id="header">
+      <div id="header-content">
+        {{HEADER}}
+      </div>
+    </div>
     <div id="blog-content">
       {{CONTENT}}
+    </div>
+    <div id="comments">
+      <h1 id="comments-header">Comments</h1>
+      <div id="comments-container">
+      </div>
     </div>
   </body>
 </html>

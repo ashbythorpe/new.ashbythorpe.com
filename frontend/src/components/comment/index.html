@@ -1,0 +1,56 @@
+<link rel="stylesheet" href="style.css" />
+<div class="container group">
+  <div class="top-row content">
+    <div class="content-area">
+      <p class="content-text">
+        <slot name="reply-link"></slot>
+        <slot name="content"></slot>
+      </p>
+    </div>
+
+    <div class="actions">
+      <button id="self-link" class="btn before-copy" title="Copy link">
+        <include src="../../icons/link.svg" class="icon" />
+      </button>
+      <div class="copied-container after-copy">
+        Copied
+        <include src="../../icons/check.svg" class="check-icon icon" />
+      </div>
+
+      <button id="edit-btn" class="btn btn-edit owned-action" title="Edit">
+        <include src="../../icons/pencil.svg" class="icon" />
+      </button>
+
+      <button
+        id="delete-btn"
+        class="btn btn-delete owned-action"
+        title="Delete"
+      >
+        <include src="../../icons/trash.svg" class="icon" />
+      </button>
+
+      <button id="reply-btn" class="btn btn-reply" title="Reply">
+        <include src="../../icons/arrow-uturn-left.svg" class="icon" />
+      </button>
+    </div>
+  </div>
+  
+  <div class="edit-area">
+    <textarea
+      id="edit-input"
+      class="edit-input"
+      placeholder="Update your comment..."
+    ></textarea>
+    <div class="edit-actions">
+      <button id="cancel-edit-btn" class="btn-action btn-cancel">Cancel</button>
+      <button id="save-edit-btn" class="btn-action btn-save">Save</button>
+    </div>
+  </div>
+
+  <div class="meta-row content">
+    <slot name="author"></slot>
+    <slot name="time"></slot>
+  </div>
+
+  <slot name="replies"></slot>
+</div>

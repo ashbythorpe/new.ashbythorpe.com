@@ -1,1 +1,49 @@
 @import "global.css";
+
+/* Header Section */
+.projects-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.projects-title {
+  font-size: 2.25rem; /* text-4xl */
+  line-height: 2.5rem;
+  font-weight: 600;   /* font-semibold */
+  margin-top: 2rem;   /* mt-8 */
+  margin-bottom: 0;
+}
+
+.projects-subtitle {
+  margin-top: 1rem;          /* mt-4 */
+  margin-inline-start: 1rem; /* ms-4 (logical property for margin-left) */
+}
+
+/* Grid/Container Section */
+.projects-container {
+  display: flex;
+  flex-wrap: wrap;
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
+  padding: 1rem; /* p-4 */
+  box-sizing: border-box;
+}
+
+/* Column Layout */
+.projects-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* Responsive breakpoint for columns (Tailwind's md: breakpoint) */
+@media (min-width: 768px) {
+  .projects-column {
+    width: 50%; /* md:w-1/2 */
+  }
+}

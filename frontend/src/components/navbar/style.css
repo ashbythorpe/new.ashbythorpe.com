@@ -70,9 +70,9 @@ nav {
 		font-weight: 500;
 		text-wrap: nowrap;
 
-		&.selected {
-			background-color: rgb(from var(--color-black-700) r g b / 0.1);
-		}
+		/* &.selected { */
+		/* 	background-color: rgb(from var(--color-black-700) r g b / 0.1); */
+		/* } */
 
 		&:hover {
 			text-decoration-line: underline;
@@ -80,20 +80,22 @@ nav {
 		}
 
 		.icon {
+			width: 1.5rem;
 			height: 1.5rem;
-
-			svg {
-				width: 1.5rem;
-				height: 1.5rem;
-			}
 		}
-
 
 		span {
 			margin-left: 0.5rem;
 			display: none;
 		}
 	}
+}
+
+:host([selected="home"]) #navbar-home,
+:host([selected="contact"]) #navbar-contact,
+:host([selected="projects"]) #navbar-projects,
+:host([selected="blog"]) #navbar-blog {
+	background-color: rgb(from var(--color-black-700) r g b / 0.1);
 }
 
 #github-container {
@@ -115,7 +117,7 @@ nav {
 			color: var(--color-black-900);
 		}
 
-		github-icon {
+		.github-icon {
 			margin-block: auto;
 			height: 1.5rem;
 

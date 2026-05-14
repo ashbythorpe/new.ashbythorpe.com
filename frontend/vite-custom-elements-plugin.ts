@@ -1,11 +1,11 @@
-import type { IndexHtmlTransformContext, Plugin } from "vite";
+import type { Plugin } from "vite";
 import { access, constants, readFile } from "node:fs/promises";
 import { resolve } from "path";
 import ts from "typescript";
 import { HTMLElement, parse } from "node-html-parser";
 import MagicString from "magic-string";
 import { dirname } from "node:path";
-import * as esbuild from "esbuild";
+import { bundle as bundleCss, transform as transformCss } from "lightningcss";
 
 interface ComponentBundle {
     name: string;
@@ -13,7 +13,6 @@ interface ComponentBundle {
     sourceFile: string;
     template: string;
     cssFiles: Set<string>;
-    shadowRoot: boolean;
 }
 
 interface ElementDefinition {
@@ -22,31 +21,113 @@ interface ElementDefinition {
     sourceFile: string;
     classNode: ts.ClassDeclaration;
     static: boolean;
-    shadowRoot: boolean;
 }
 
 interface PluginOptions {
     templateBaseDir?: string;
     enableSSR?: boolean;
-    transformComponent?: (
-        name: string,
-        actualElement: HTMLElement,
-        templateElement: HTMLElement,
-        ctx: IndexHtmlTransformContext,
-    ) =>
-        | HTMLElement
-        | null
-        | undefined
-        | void
-        | Promise<HTMLElement | null | undefined | void>;
+}
+
+/**
+ * Process `<include src="./path/to/file.svg" />` elements by inlining
+ * the referenced file's contents. Any extra attributes on the <include>
+ * element are forwarded onto the root element of the inlined content
+ * (e.g. class, id, aria-label).
+ *
+ * Returns the set of resolved file paths that were inlined, so callers
+ * can register them as watch dependencies.
+ */
+async function processIncludes(
+    root: HTMLElement,
+    baseDir: string,
+    projectRoot: string,
+): Promise<Set<string>> {
+    const includedFiles = new Set<string>();
+
+    const includeElements = root.querySelectorAll("include");
+    for (const el of includeElements) {
+        const src = el.getAttribute("src");
+        if (!src) {
+            console.warn("<include> element missing src attribute");
+            continue;
+        }
+
+        let filePath: string;
+        try {
+            filePath = await resolveFile(src, baseDir, projectRoot);
+        } catch (e) {
+            console.warn(`Could not resolve <include src="${src}">: ${e}`);
+            continue;
+        }
+
+        includedFiles.add(filePath);
+
+        const content = await readFile(filePath, "utf-8");
+        const parsed = parse(content.trim());
+
+        // Forward attributes from <include> onto the root element of
+        // the inlined content (typically <svg>).
+        const inlinedRoot = parsed.firstChild;
+        if (inlinedRoot instanceof HTMLElement) {
+            for (const [attr, value] of Object.entries(el.attributes)) {
+                if (attr === "src") continue;
+                // Merge class attributes rather than overwriting
+                if (attr === "class") {
+                    const existing = inlinedRoot.getAttribute("class") || "";
+                    inlinedRoot.setAttribute(
+                        "class",
+                        existing ? `${existing} ${value}` : value,
+                    );
+                } else {
+                    inlinedRoot.setAttribute(attr, value);
+                }
+            }
+        }
+
+        // Recursively process nested includes in the inlined content
+        const nestedFiles = await processIncludes(
+            parsed,
+            dirname(filePath),
+            projectRoot,
+        );
+        for (const f of nestedFiles) {
+            includedFiles.add(f);
+        }
+
+        el.replaceWith(parsed.toString());
+    }
+
+    return includedFiles;
+}
+
+/**
+ * Resolve a relative path against a base directory, falling back to
+ * the project root.
+ */
+async function resolveFile(
+    relativePath: string,
+    baseDir: string,
+    projectRoot: string,
+): Promise<string> {
+    const primary = resolve(baseDir, relativePath);
+    try {
+        await access(primary, constants.F_OK);
+        return primary;
+    } catch {
+        const fallback = resolve(projectRoot, relativePath);
+        try {
+            await access(fallback, constants.F_OK);
+            return fallback;
+        } catch {
+            throw new Error(
+                `Could not find "${relativePath}" in ${baseDir} or ${projectRoot}`,
+            );
+        }
+    }
 }
 
 export function customElementsPlugin(options: PluginOptions = {}): Plugin {
-    const {
-        templateBaseDir = "src/components",
-        enableSSR = true,
-        transformComponent = null,
-    } = options;
+    const { templateBaseDir = "src/components", enableSSR = true } = options;
 
     const componentBundles = new Map<string, ComponentBundle>();
     let root = "";
@@ -88,25 +169,11 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                         );
                     }
 
-                    let additions = "";
                     if (!element.static || isDev) {
-                        additions += `\n    static __templateString = ${templateVarName};\n`;
-
-                        if (isDev) {
-                            additions += `    static __dev = true;\n`;
-                        }
-                    }
-
-                    if (element.static) {
-                        additions += `    static __static = true;\n`
-                    }
-
-                    if (!element.shadowRoot) {
-                        additions += `    static __shadowRoot = false;\n`
-                    }
-
-                    if (additions !== "") {
-                        s.appendLeft(element.classNode.members.pos, additions);
+                        s.appendLeft(
+                            element.classNode.members.pos,
+                            `\n    static __templateString = ${templateVarName};\n`,
+                        );
                     }
 
                     this.addWatchFile(bundle.templatePath);
@@ -146,11 +213,11 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                     this.warn(
                         `Component bundle for "${elementName}" not found`,
                     );
-                    return 'export default "";';
+                    return { code: 'export default "";', moduleType: "js" };
                 }
 
                 const res = `export default ${JSON.stringify(bundle.template)};`;
-                return res;
+                return { code: res, moduleType: "js" };
             }
 
             return null;
@@ -159,122 +226,80 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
         transformIndexHtml: {
             order: "post",
             async handler(html, ctx) {
-                if (!enableSSR) return html;
+                const htmlRoot = parse(html);
+                let hasChanges = false;
 
-                const root = parse(html);
+                // Process <include> elements in the HTML page itself
+                const includedFiles = await processIncludes(
+                    htmlRoot,
+                    dirname(ctx.filename),
+                    root,
+                );
+                if (includedFiles.size > 0) {
+                    hasChanges = true;
+                }
 
-                const customElements = new Set(componentBundles.keys());
+                // SSR: inline component templates
+                if (enableSSR) {
+                    const customElements = new Set(componentBundles.keys());
+                    const processedElements = new Set<HTMLElement>();
 
-                // Process components in dependency order (deepest first)
-                const processedElements = new Set<HTMLElement>();
+                    async function processComponentsAtLevel(
+                        containerElement: HTMLElement,
+                    ): Promise<boolean> {
+                        let levelHasChanges = false;
 
-                async function processComponentsAtLevel(
-                    containerElement: HTMLElement,
-                ): Promise<boolean> {
-                    let hasChanges = false;
+                        const directCustomElements = getDirectCustomElements(
+                            containerElement,
+                            customElements,
+                        );
 
-                    // Find all direct child custom elements (not nested in other custom elements)
-                    const directCustomElements =
-                        getDirectCustomElements(containerElement);
+                        for (const element of directCustomElements) {
+                            const tagName = element.tagName.toLowerCase();
+                            const bundle = componentBundles.get(tagName);
 
-                    for (const element of directCustomElements) {
-                        const tagName = element.tagName.toLowerCase();
-                        const bundle = componentBundles.get(tagName);
+                            if (bundle && !processedElements.has(element)) {
+                                try {
+                                    const templateContent = bundle.template;
+                                    let templateElement =
+                                        parse(templateContent);
 
-                        if (bundle && !processedElements.has(element)) {
-                            try {
-                                const templateContent = bundle.template;
-                                let templateElement = parse(templateContent);
-
-                                if (transformComponent) {
-                                    const result = await transformComponent(
-                                        bundle.name,
-                                        element,
+                                    // Recursively process nested components
+                                    await processComponentsAtLevel(
                                         templateElement,
-                                        ctx,
                                     );
 
-                                    if (result) {
-                                        templateElement = result;
-                                    }
-                                }
-
-                                // First, recursively process any nested components in the template
-                                await processComponentsAtLevel(templateElement);
-
-                                if (bundle.shadowRoot) {
-                                    // Then render this component
                                     const shadowTemplate = `<template shadowrootmode="open">${templateElement.innerHTML}</template>`;
                                     element.insertAdjacentHTML(
                                         "afterbegin",
                                         shadowTemplate,
                                     );
-                                } else {
-                                    element.insertAdjacentHTML(
-                                        "afterbegin",
-                                        templateElement.innerHTML,
+
+                                    processedElements.add(element);
+                                    levelHasChanges = true;
+                                } catch (error) {
+                                    console.warn(
+                                        `Failed to process SSR for ${tagName}:`,
+                                        error,
                                     );
                                 }
-
-                                processedElements.add(element);
-                                hasChanges = true;
-                            } catch (error) {
-                                console.warn(
-                                    `Failed to process SSR for ${tagName}:`,
-                                    error,
-                                );
                             }
                         }
+
+                        return levelHasChanges;
                     }
 
-                    return hasChanges;
-                }
-
-                // Helper function to get only direct custom element children
-                function getDirectCustomElements(
-                    container: HTMLElement,
-                ): HTMLElement[] {
-                    const directElements: HTMLElement[] = [];
-
-                    function traverse(
-                        node: HTMLElement,
-                        isDirectChild: boolean = true,
-                    ) {
-                        if (node.nodeType === 1) {
-                            // Element node
-                            const tagName = node.tagName?.toLowerCase();
-
-                            if (tagName && customElements.has(tagName)) {
-                                if (isDirectChild) {
-                                    directElements.push(node);
-                                }
-                                // Don't traverse into custom elements - their children will be handled
-                                // when the custom element itself is processed
-                                return;
-                            }
-                        }
-
-                        // Continue traversing for non-custom elements
-                        if (node.childNodes) {
-                            for (const child of node.childNodes) {
-                                if (child instanceof HTMLElement) {
-                                    traverse(child, isDirectChild);
-                                }
-                            }
-                        }
+                    const ssrChanged = await processComponentsAtLevel(htmlRoot);
+                    if (ssrChanged) {
+                        hasChanges = true;
                     }
-
-                    traverse(container);
-                    return directElements;
                 }
 
-                const hasChanges = await processComponentsAtLevel(root);
-                return hasChanges ? root.outerHTML : html;
+                return hasChanges ? htmlRoot.outerHTML : html;
             },
         },
 
         async handleHotUpdate(ctx) {
-            // Check if this file affects any component
             for (const [name, bundle] of componentBundles) {
                 const shouldReload =
                     bundle.templatePath === ctx.file ||
@@ -283,7 +308,6 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                 if (shouldReload) {
                     await reloadBundle(bundle);
 
-                    // Invalidate virtual modules
                     const templateModule = ctx.server.moduleGraph.getModuleById(
                         `virtual:template:${name}`,
                     );
@@ -291,7 +315,6 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                     if (templateModule)
                         await ctx.server.reloadModule(templateModule);
 
-                    // Reload component module
                     const componentModule =
                         ctx.server.moduleGraph.getModuleById(bundle.sourceFile);
                     if (componentModule) {
@@ -308,7 +331,11 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
     ): Promise<ComponentBundle> {
         const dir = dirname(sourceFile);
 
-        const templatePath = await tryLoadFile(element.templatePath, dir);
+        const templatePath = await resolveFile(
+            element.templatePath,
+            dir,
+            resolve(root, templateBaseDir),
+        );
 
         const { template, cssFiles } = await loadTemplate(templatePath);
 
@@ -318,7 +345,6 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
             sourceFile,
             template,
             cssFiles,
-            shadowRoot: element.shadowRoot,
         };
     }
 
@@ -346,6 +372,17 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
 
         const cssFiles: Set<string> = new Set();
 
+        // Process <include> elements in the template
+        const includedFiles = await processIncludes(
+            templateElement,
+            dirname(templatePath),
+            root,
+        );
+        // Note: included files aren't added to cssFiles but are
+        // watched via the template reload path. If you want
+        // granular HMR for included SVGs, add them to a separate
+        // tracked set and handle in handleHotUpdate.
+
         for (const linkElement of templateElement.querySelectorAll(
             "link[rel='stylesheet']",
         )) {
@@ -355,39 +392,44 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
 
             let cssFile: string;
             try {
-                cssFile = await tryLoadFile(href, dirname(templatePath));
+                cssFile = await resolveFile(href, dirname(templatePath), root);
             } catch (e) {
                 console.warn(`Error loading CSS file ${href}: ${e}`);
                 continue;
             }
 
-            const { outputFiles, metafile } = await esbuild.build({
-                entryPoints: [cssFile],
-                bundle: true,
+            const result = bundleCss({
+                filename: cssFile,
                 minify: true,
-                write: false,
-                metafile: true,
+                sourceMap: false,
             });
 
-            const minified = outputFiles[0].text;
+            const minified = result.code.toString();
 
             linkElement.replaceWith(`<style>${minified}</style>`);
 
-            for (const file of Object.keys(metafile.inputs)) {
-                cssFiles.add(resolve(root, file));
+            // Track the entry file itself
+            cssFiles.add(cssFile);
+
+            // Track any @import dependencies
+            if (result.dependencies) {
+                for (const dep of result.dependencies) {
+                    if (dep.type === "import") {
+                        cssFiles.add(resolve(dirname(cssFile), dep.url));
+                    }
+                }
             }
         }
 
         for (const styleElement of templateElement.querySelectorAll("style")) {
-            const { code: minified } = await esbuild.transform(
-                styleElement.textContent,
-                {
-                    loader: "css",
-                    minify: true,
-                },
-            );
+            const result = transformCss({
+                filename: "inline.css",
+                code: Buffer.from(styleElement.textContent),
+                minify: true,
+                sourceMap: false,
+            });
 
-            styleElement.textContent = minified;
+            styleElement.textContent = result.code.toString();
         }
 
         return {
@@ -395,28 +437,35 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
             cssFiles,
         };
     }
+}
 
-    async function tryLoadFile(
-        relativePath: string,
-        dir: string,
-    ): Promise<string> {
-        let templatePath = resolve(dir, relativePath);
+function getDirectCustomElements(
+    container: HTMLElement,
+    customElements: Set<string>,
+): HTMLElement[] {
+    const directElements: HTMLElement[] = [];
 
-        try {
-            await access(templatePath, constants.F_OK);
-        } catch (error) {
-            const basePath = resolve(root, templateBaseDir);
-            templatePath = resolve(basePath, relativePath);
+    function traverse(node: HTMLElement) {
+        if (node.nodeType === 1) {
+            const tagName = node.tagName?.toLowerCase();
 
-            try {
-                await access(templatePath, constants.F_OK);
-            } catch (error) {
-                throw new Error(`Could not access ${relativePath}: ${error}`);
+            if (tagName && customElements.has(tagName)) {
+                directElements.push(node);
+                return;
             }
         }
 
-        return templatePath;
+        if (node.childNodes) {
+            for (const child of node.childNodes) {
+                if (child instanceof HTMLElement) {
+                    traverse(child);
+                }
+            }
+        }
     }
+
+    traverse(container);
+    return directElements;
 }
 
 function parseElementDecorators(
@@ -434,7 +483,6 @@ function parseElementDecorators(
 
     function visit(node: ts.Node) {
         if (ts.isClassDeclaration(node)) {
-            // Use TypeScript 5.0+ standardized decorators API
             const decorators = ts.getDecorators?.(node);
 
             if (decorators) {
@@ -465,7 +513,6 @@ function parseElementDefinition(
     let definition: Omit<ElementDefinition, "static" | "shadowRoot"> | null =
         null;
     let isStatic = false;
-    let shadowRoot = true;
 
     for (const decorator of decorators) {
         if (
@@ -492,8 +539,6 @@ function parseElementDefinition(
             const decoratorName = decorator.expression.text;
             if (decoratorName === "staticElement") {
                 isStatic = true;
-            } else if (decoratorName === "noShadowRoot") {
-                shadowRoot = false;
             }
         }
     }
@@ -502,7 +547,6 @@ function parseElementDefinition(
         return {
             ...definition,
             static: isStatic,
-            shadowRoot,
         };
     } else {
         return null;

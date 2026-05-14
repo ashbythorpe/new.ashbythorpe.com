@@ -1,0 +1,38 @@
+:host(:not(:state(open))) .replies-open {
+  display: none;
+}
+
+:host(:state(open)) .replies-closed {
+  display: none;
+}
+
+:host(:not(:state(loading))) .replies-loading {
+  display: none;
+}
+
+#show-replies {
+  all: unset;
+  margin-top: 0.75rem;
+  display: block;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.replies-label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.875rem;
+  color: var(--color-gray-600);
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+  margin-left: 0.5rem;
+}
+
+#replies-list {
+  padding-left: 1rem;
+}

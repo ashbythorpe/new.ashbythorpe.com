@@ -10,15 +10,17 @@
   },
   "devDependencies": {
     "@djot/djot": "^0.3.2",
-    "@types/node": "^24.2.1",
+    "@types/node": "^25.6.2",
     "magic-string": "^0.30.17",
     "node-html-parser": "^7.0.1",
-    "shiki": "^3.10.0",
-    "typescript": "~5.8.3",
-    "vite": "^7.1.2",
+    "shiki": "^4.0.2",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.11",
     "wrangler": "^4.32.0"
   },
   "dependencies": {
-    "@fontsource/inter": "^5.2.6"
+    "@fontsource/inter": "^5.2.6",
+    "pagefind": "^1.5.2",
+    "temml": "^0.13.2"
   }
 }

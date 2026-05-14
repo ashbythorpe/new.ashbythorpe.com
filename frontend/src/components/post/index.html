@@ -1,0 +1,19 @@
+<link rel="stylesheet" href="./style.css">
+<div class="card-container">
+  <div class="card-group">
+    <a id="main-link" class="card-link">
+      <h2 class="card-title">
+        <slot name="title"></slot>
+      </h2>
+      <div class="card-date">
+        <slot name="date"></slot>
+      </div>
+      <div class="card-summary">
+        <slot name="summary"></slot>
+      </div>
+    </a>
+
+    <div class="card-bg-middle"></div>
+    <div class="card-bg-bottom"></div>
+  </div>
+</div>

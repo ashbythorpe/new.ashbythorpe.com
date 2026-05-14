@@ -1,3 +1,4 @@
+{date="2026-05-11" summary="Migrating to Vite 8 with Rolldown"}
 # AAA aa
 
 Hello!
@@ -6,3 +7,5 @@ Hello!
 const x = 1;
 const y = 2;
 ```
+
+$$`e^i \pi`

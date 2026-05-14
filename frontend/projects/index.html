@@ -8,9 +8,70 @@
     <script type="module" src="../src/projects.ts"></script>
   </head>
   <body>
-    <div>
       <nav-bar selected="projects"></nav-bar>
-      <star-pattern></star-pattern>
-    </div>
+    <main>
+      <div class="projects-header">
+        <h1 class="projects-title">Projects</h1>
+        <p class="projects-subtitle">
+          This is an array of open source projects I've worked on
+          independently over the past few years.
+        </p>
+      </div>
+
+      <div class="projects-container">
+        <div class="projects-column">
+          <project-card href="https://ashbythorpe.github.io/selenider/" position="1">
+            <span slot="title">selenider</span>
+            <span slot="description">
+              A semi-popular R package to facilitate high level browser
+              automation, using Selenium and the Chrome Devtools Protocol.
+            </span>
+          </project-card>
+
+          <project-card href="https://ashbythorpe.github.io/selenium-r/" position="2">
+            <span slot="title">selenium-r</span>
+            <span slot="description">
+              Interface to Selenium from R.
+            </span>
+          </project-card>
+
+          <project-card href="https://github.com/ashbythorpe/financialDataAnalysis" position="3">
+            <span slot="title">financialDataAnalysis</span>
+            <span slot="description">
+              A website made using Shiny, to analyze, forecast and visualise
+              financial data.
+            </span>
+          </project-card>
+        </div>
+
+        <div class="projects-column">
+          <project-card href="https://ashbythorpe.github.io/nestedmodels/" position="1">
+            <span slot="title">nestedmodels</span>
+            <span slot="description">
+              An R package, enhancing the tidymodels framework to support the
+              modelling of nested data.
+            </span>
+          </project-card>
+
+          <project-card href="https://github.com/ashbythorpe/ashbythorpe.com" position="2">
+            <span slot="title">ashbythorpe.com</span>
+            <span slot="description">
+              This website! Made using React and Next.js. Includes a fully
+              functional login and comment system.
+            </span>
+          </project-card>
+
+          <project-card href="https://github.com/ashbythorpe/r-analyzer" position="3">
+            <span slot="title">r-analyzer</span>
+            <span slot="description">
+              A (soon-to-be) implementation of the Language Server Protocol for
+              R, written in Rust. Currently consists of a hand-written
+              fault-tolerant Pratt parser.
+            </span>
+          </project-card>
+        </div>
+      </div>
+      <include src="../src/icons/stars.svg" id="star-pattern">
+    </main>
   </body>
 </html>

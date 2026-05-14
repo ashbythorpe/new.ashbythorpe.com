@@ -6,9 +6,9 @@ interface Font {
     type: string;
 }
 
-export function simpleFontPreloadPlugin(fonts: Font[] = []): Plugin {
+export function fontPreloadPlugin(fonts: Font[] = []): Plugin {
     return {
-        name: "simple-font-preload-production",
+        name: "font-preload-production",
         apply: "build",
 
         transformIndexHtml: {
@@ -50,7 +50,6 @@ export function simpleFontPreloadPlugin(fonts: Font[] = []): Plugin {
                                 as: "font",
                                 type: fontConfig.type,
                                 href: `/${matchingAsset}`,
-                                crossorigin: "anonymous",
                             },
                             injectTo: "head",
                         });

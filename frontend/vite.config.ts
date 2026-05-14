@@ -3,34 +3,24 @@ import { customElementsPlugin } from "./vite-custom-elements-plugin";
 import { djotPlugin } from "./vite-djot-plugin";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { simpleFontPreloadPlugin } from "./vite-font-preload-plugin";
+import { fontPreloadPlugin } from "./vite-font-preload-plugin";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
     plugins: [
-        customElementsPlugin({
-            transformComponent(name, actualElement, templateElement) {
-                if (name === "nav-bar") {
-                    const selected = actualElement.getAttribute("selected");
-
-                    const item = templateElement.querySelector(
-                        `#navbar-${selected}`,
-                    );
-
-                    if (item) {
-                        item.classList.add("selected");
-                    } else {
-                        console.error("Invalid `selected` attribute");
-                    }
-                }
-            },
-        }),
+        customElementsPlugin(),
         djotPlugin({
             languages: ["typescript", "javascript", "prisma"],
             template: "post/template.html",
+            blogIndex: {
+                postsDir: "blog",
+                template: "blog/template.html",
+                outputDir: "blog",
+                postsPerPage: 10,
+            },
         }),
-        simpleFontPreloadPlugin([
+        fontPreloadPlugin([
             {
                 name: "inter",
                 import: "@fontsource/inter/files/inter-latin-400-normal.woff2",
@@ -38,22 +28,27 @@ export default defineConfig({
             },
         ]),
     ],
-    esbuild: {
+    oxc: {
         target: "es2022",
     },
     appType: "mpa",
     build: {
-        rollupOptions: {
+        rolldownOptions: {
             input: {
                 main: resolve(__dirname, "index.html"),
                 contact: resolve(__dirname, "contact/index.html"),
                 projects: resolve(__dirname, "projects/index.html"),
+                // blog: resolve(__dirname, "projects/blog.html"),
             },
         },
     },
     server: {
         proxy: {
-            "/api": "http://localhost:3000",
+            "/api": {
+                target: "http://localhost:3000",
+                rewrite: (path) => path.replace(/^\/api/, ''),
+            },
+
         },
     },
 });

@@ -43,9 +43,9 @@ main {
 			color: var(--color-black-500);
 		}
 
-    &:visited {
-      color: var(--color-black-1000)
-    }
+		&:visited {
+			color: var(--color-black-1000);
+		}
 	}
 
 	svg {
@@ -54,11 +54,9 @@ main {
 	}
 }
 
-diamond-pattern {
-	width: 100%;
+#diamond-pattern {
+	/* width: 100%; */
 
-	svg {
-    max-height: 500px;
-		margin-inline: auto;
-	}
+	max-height: 500px;
+	margin-inline: auto;
 }
