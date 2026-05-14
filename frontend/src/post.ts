@@ -2,7 +2,7 @@ import "./components/navbar/index.ts";
 import { BlogComment } from "./components/comment/index.ts";
 import "./styles/post.css";
 import { postName } from "./routes.ts";
-import type { Comment, CommentData, OriginalComment } from "./types.ts";
+import type { OriginalComment } from "./types.ts";
 
 interface CommentsResult {
     totalComments: number;
