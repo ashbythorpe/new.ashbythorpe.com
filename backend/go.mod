@@ -1,31 +1,53 @@
 module ashbythorpe.com/website
 
-go 1.24.5
+go 1.26.0
 
 require (
-	github.com/gofiber/fiber/v2 v2.52.9
+	github.com/gofiber/fiber/v3 v3.2.0
+	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/resend/resend-go/v2 v2.22.0
-	golang.org/x/crypto v0.41.0
+	golang.org/x/crypto v0.50.0
+	golang.org/x/sync v0.20.0
 	modernc.org/sqlite v1.38.2
 )
 
 require (
-	github.com/andybalholm/brotli v1.2.0 // indirect
+	dario.cat/mergo v1.0.2 // indirect
+	github.com/air-verse/air v1.65.1 // indirect
+	github.com/andybalholm/brotli v1.2.1 // indirect
+	github.com/bep/godartsass/v2 v2.5.0 // indirect
+	github.com/bep/golibsass v1.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/fatih/color v1.18.0 // indirect
+	github.com/fsnotify/fsnotify v1.9.0 // indirect
+	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/gofiber/schema v1.7.1 // indirect
+	github.com/gofiber/utils/v2 v2.0.4 // indirect
+	github.com/gohugoio/hugo v0.149.1 // indirect
+	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.16 // indirect
+	github.com/mattn/go-isatty v0.0.21 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
+	github.com/pelletier/go-toml v1.9.5 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
+	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/spf13/afero v1.14.0 // indirect
+	github.com/spf13/cast v1.9.2 // indirect
+	github.com/tdewolff/parse/v2 v2.8.3 // indirect
+	github.com/tinylib/msgp v1.6.4 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.64.0 // indirect
-	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
-	golang.org/x/sys v0.35.0 // indirect
+	github.com/valyala/fasthttp v1.70.0 // indirect
+	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b // indirect
+	golang.org/x/net v0.53.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
+	golang.org/x/text v0.36.0 // indirect
+	google.golang.org/protobuf v1.36.8 // indirect
 	modernc.org/libc v1.66.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
+
+tool github.com/air-verse/air

@@ -15,10 +15,35 @@ func SetupResend() {
 
 func SendMagicLinkEmail(token string, email string) error {
 	params := &resend.SendEmailRequest{
-		From:    "AshbyThorpe <onboarding@resend.dev>",
+		From:    "AshbyThorpe <info@website.ashbythorpe.com>",
 		To:      []string{email},
 		Subject: "Sign in to ashbythorpe.com",
-		Text:    fmt.Sprintf("Sign in to ashbythorpe.com\nashbythorpe.com/auth/verify-account/%s\n\n", token),
+		Text: fmt.Sprintf(
+			`Sign in to ashbythorpe.com:
+ashbythorpe.com/auth/verify-account/%s
+
+`,
+			token,
+		),
+	}
+
+	_, err := resendClient.Emails.Send(params)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SendPasswordResetEmail(token string, email string) error {
+	params := &resend.SendEmailRequest{
+		From:    "AshbyThorpe <info@website.ashbythorpe.com>",
+		To:      []string{email},
+		Subject: "Reset your password",
+		Text:    fmt.Sprintf(`Reset your password for ashbythorpe.com:
+ashbythorpe.com/auth/reset-password/%s
+
+`, token),
 	}
 
 	_, err := resendClient.Emails.Send(params)
