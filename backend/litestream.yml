@@ -1,0 +1,5 @@
+dbs:
+  - path: /data/app.db
+    replicas:
+      - url: s3://${LITESTREAM_BUCKET}/db
+        endpoint: ${LITESTREAM_ENDPOINT}
