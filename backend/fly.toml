@@ -10,6 +10,9 @@ primary_region = 'lhr'
 
 [env]
   DB_PATH = '/data/app.db'
+  LITESTREAM_BUCKET="ashbythorpe-litestream"
+  LITESTREAM_ENDPOINT = "https://4fdb09e24293ab3eb62c679b300a2158.r2.cloudflarestorage.com"
+  LITESTREAM_REPLICA_URL = "s3://ashbythorpe-litestream/db"
 
 [[mounts]]
   source = 'ashbythorpe_data'
