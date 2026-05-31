@@ -2,7 +2,7 @@ export async function onRequest(context) {
   const { request } = context;
   const url = new URL(request.url);
 
-  url.hostname = "api.ashbythorpe.com";
+  url.hostname = "internal-go-api.local";
 
   url.pathname = url.pathname.replace(/^\/api/, "");
 
@@ -14,9 +14,7 @@ export async function onRequest(context) {
   });
 
   try {
-    const response = await fetch(modifiedRequest);
-
-    return response;
+    return await env.GO_BACKEND.fetch(modifiedRequest);
   } catch (err) {
     return new Response(
       JSON.stringify({ error: "Internal Gateway Error", details: err.message }),
