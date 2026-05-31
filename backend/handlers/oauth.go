@@ -15,7 +15,6 @@ import (
 	"ashbythorpe.com/website/config"
 	"ashbythorpe.com/website/db"
 	"github.com/gofiber/fiber/v3"
-	"honnef.co/go/tools/go/ir"
 )
 
 type GithubAccessTokenResponse struct {
