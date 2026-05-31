@@ -3,7 +3,6 @@ compatibility_date = "2025-08-13"
 
 pages_build_output_dir = "./dist"
 
-[[vpc_services]]
-binding = "GO_BACKEND"
-service_id = "019e7df0-74ec-7fa2-962f-136f0fbe9e7a"
-remote = true
+[[services]]
+binding = "API_WORKER"
+service = "api-gateway"
