@@ -12,19 +12,19 @@ import (
 
 type User struct {
 	ID       int
-	Username *string
+	Email    string
 	GithubID *string
 	Name     string
 }
 
 // CreateUser creates a user, returning the user's ID
-func CreateUser(ctx context.Context, username string, password string, name string, email string) (int, error) {
+func CreateUser(ctx context.Context, email string, password string, name string) (int, error) {
 	hashedPassword := hashPassword(password)
 
 	query := `
-	INSERT INTO users (username, password, salt, name, email) VALUES (?, ?, ?, ?, ?) RETURNING id
+	INSERT INTO users (email, password, salt, name) VALUES (?, ?, ?, ?) RETURNING id
 	`
-	res := DB.QueryRowContext(ctx, query, username, hashedPassword.hash, hashedPassword.salt, name, email)
+	res := DB.QueryRowContext(ctx, query, email, hashedPassword.hash, hashedPassword.salt, name)
 
 	var id int
 	err := res.Scan(&id)
@@ -35,11 +35,11 @@ func CreateUser(ctx context.Context, username string, password string, name stri
 	return id, nil
 }
 
-func DeleteUser(ctx context.Context, username string) error {
+func DeleteUser(ctx context.Context, email string) error {
 	query := `
-	DELETE FROM users WHERE username = ?
+	DELETE FROM users WHERE email = ?
 	`
-	_, err := DB.ExecContext(ctx, query, username)
+	_, err := DB.ExecContext(ctx, query, email)
 
 	return err
 }
@@ -64,13 +64,13 @@ func CreateUserFromGithub(ctx context.Context, githubID string, name string, ema
 
 func GetUser(ctx context.Context, id int) (*User, error) {
 	query := `
-	SELECT username, github_id, name FROM users WHERE id = ?
+	SELECT email, github_id, name FROM users WHERE id = ?
 	`
 
 	res := DB.QueryRowContext(ctx, query, id)
 
 	user := User{ID: id}
-	err := res.Scan(&user.Username, &user.GithubID, &user.Name)
+	err := res.Scan(&user.Email, &user.GithubID, &user.Name)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -92,12 +92,12 @@ type UserResult struct {
 	Verified bool
 }
 
-func ValidateUser(ctx context.Context, username string, password string) (UserResult, error) {
+func ValidateUser(ctx context.Context, email string, password string) (UserResult, error) {
 	query := `
-	SELECT id, password, salt, verified FROM users WHERE username = ? AND password IS NOT NULL
+	SELECT id, password, salt, verified FROM users WHERE email = ? AND password IS NOT NULL
 	`
 
-	res := DB.QueryRowContext(ctx, query, username)
+	res := DB.QueryRowContext(ctx, query, email)
 
 	var result UserResult
 	var hashedPassword HashedPassword
@@ -129,13 +129,17 @@ func GetUserStatusByEmail(ctx context.Context, email string) (UserResult, error)
 	return result, nil
 }
 
-func GetUserName(ctx context.Context, id int) (string, error) {
+func GetUserName(ctx context.Context, id int) (*string, error) {
 	query := "SELECT name FROM users WHERE id = ?"
 
-	var name string
+	var name *string
 	row := DB.QueryRowContext(ctx, query, id)
 	if err := row.Scan(&name); err != nil {
-		return "", err
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, err
 	}
 
 	return name, nil

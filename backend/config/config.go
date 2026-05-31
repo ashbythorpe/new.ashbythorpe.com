@@ -5,8 +5,12 @@ import (
 )
 
 var (
-	ResendAPIKey string
-	DBPath string
+	ResendAPIKey       string
+	DBPath             string
+	Host               string
+	GitHubClientID     string
+	GitHubClientSecret string
+	Pepper             string
 )
 
 func Init() error {
@@ -15,6 +19,13 @@ func Init() error {
 	if DBPath == "" {
 		DBPath = "data/app.db"
 	}
+	Host = os.Getenv("HOST")
+	if Host == "" {
+		Host = "localhost:3000"
+	}
+	GitHubClientID = os.Getenv("GITHUB_CLIENT_ID")
+	GitHubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
+	Pepper = os.Getenv("PEPPER")
 
 	return nil
 }

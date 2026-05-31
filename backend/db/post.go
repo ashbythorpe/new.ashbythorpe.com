@@ -8,7 +8,7 @@ import (
 type Comment struct {
 	ID        int    `json:"id"`
 	Author    string `json:"author"`
-	Text      string `json:"text"`
+	Content   string `json:"content"`
 	CreatedAt string `json:"createdAt"`
 	Owned     bool   `json:"owned"`
 }
@@ -40,17 +40,17 @@ func CountComments(ctx context.Context, postName string) (int, error) {
 
 func GetComments(ctx context.Context, postName string, userID int, page int) ([]OriginalComment, error) {
 	query := `
-	SELECT comments.id, users.name AS author, comments.text, strftime('%Y-%m-%dT%H:%M:%SZ', comments.created_at) as created_at, comments.userID = ? as owned, COUNT(replies.id) AS replies
+	SELECT comments.id, users.name AS author, comments.content, strftime('%Y-%m-%dT%H:%M:%SZ', comments.created_at) as created_at, comments.userID = ? as owned, COUNT(replies.id) AS replies
 	FROM comments
 	LEFT JOIN users ON comments.userID = users.id
 	LEFT JOIN comments AS replies ON comments.id = replies.original_reply_to
 	WHERE comments.post_name = ? AND comments.original_reply_to IS NULL
 	GROUP BY comments.id
 	ORDER BY comments.created_at DESC
-	LIMIT 20 OFFSET ?
+	LIMIT 10 OFFSET ?
 	`
 
-	rows, err := DB.QueryContext(ctx, query, userID, postName, (page-1)*20)
+	rows, err := DB.QueryContext(ctx, query, userID, postName, (page-1)*10)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func GetComments(ctx context.Context, postName string, userID int, page int) ([]
 	for rows.Next() {
 		var comment OriginalComment
 
-		err := rows.Scan(&comment.ID, &comment.Author, &comment.Text, &comment.CreatedAt, &comment.Owned, &comment.NumReplies)
+		err := rows.Scan(&comment.ID, &comment.Author, &comment.Content, &comment.CreatedAt, &comment.Owned, &comment.NumReplies)
 		if err != nil {
 			return nil, err
 		}
@@ -74,7 +74,7 @@ func GetComments(ctx context.Context, postName string, userID int, page int) ([]
 
 func GetReplies(ctx context.Context, postName string, id int, userID int) ([]Reply, error) {
 	query := `
-	SELECT comments.id, users.name, comments.text, strftime('%Y-%m-%dT%H:%M:%SZ', comments.created_at) as created_at, comments.userID = ? as owned, comments.reply_to, reply_users.name, comments.original_reply_to
+	SELECT comments.id, users.name, comments.content, strftime('%Y-%m-%dT%H:%M:%SZ', comments.created_at) as created_at, comments.userID = ? as owned, comments.reply_to, reply_users.name, comments.original_reply_to
 	FROM comments
 	LEFT JOIN users ON comments.userID = users.id
 	LEFT JOIN comments AS original_comments ON comments.reply_to = original_comments.id
@@ -96,7 +96,7 @@ func GetReplies(ctx context.Context, postName string, id int, userID int) ([]Rep
 		var replyToID *int
 		var replyToName *string
 
-		err := rows.Scan(&comment.ID, &comment.Author, &comment.Text, &comment.CreatedAt, &comment.Owned, &replyToID, &replyToName, &comment.OriginalReplyTo)
+		err := rows.Scan(&comment.ID, &comment.Author, &comment.Content, &comment.CreatedAt, &comment.Owned, &replyToID, &replyToName, &comment.OriginalReplyTo)
 		if err != nil {
 			return nil, err
 		}
@@ -111,7 +111,7 @@ func GetReplies(ctx context.Context, postName string, id int, userID int) ([]Rep
 	return comments, nil
 }
 
-func CreateComment(ctx context.Context, postName string, userID int, text string, replyTo *int) (int, error) {
+func CreateComment(ctx context.Context, postName string, userID int, content string, replyTo *int) (int, error) {
 	var originalReplyTo *int
 
 	if replyTo != nil {
@@ -135,24 +135,24 @@ func CreateComment(ctx context.Context, postName string, userID int, text string
 	}
 
 	query := `
-		INSERT INTO comments (post_name, userID, text, reply_to, original_reply_to) VALUES (?, ?, ?, ?, ?) RETURNING id
+		INSERT INTO comments (post_name, userID, content, reply_to, original_reply_to) VALUES (?, ?, ?, ?, ?) RETURNING id
 	`
 
 	var id int
-	row := DB.QueryRowContext(ctx, query, postName, userID, text, replyTo, originalReplyTo)
+	row := DB.QueryRowContext(ctx, query, postName, userID, content, replyTo, originalReplyTo)
 	err := row.Scan(&id)
 
 	return id, err
 }
 
-func EditComment(ctx context.Context, id int, userID int, text string) error {
+func EditComment(ctx context.Context, id int, userID int, content string) error {
 	query := `
 		UPDATE comments
-		SET text = ?
+		SET content = ?
 		WHERE id = ? AND userID = ?
 	`
 
-	res, err := DB.ExecContext(ctx, query, text, id, userID)
+	res, err := DB.ExecContext(ctx, query, content, id, userID)
 	if err != nil {
 		return err
 	}

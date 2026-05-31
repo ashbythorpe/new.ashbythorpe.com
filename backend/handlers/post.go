@@ -6,6 +6,7 @@ import (
 
 	"ashbythorpe.com/website/db"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/log"
 )
 
 func SetupCommentRoutes(app *fiber.App) {
@@ -29,6 +30,8 @@ func getComments(c fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	log.WithContext(c).Infof("Page = %v", page)
 
 	if page <= 0 {
 		return errors.New("invalid page")

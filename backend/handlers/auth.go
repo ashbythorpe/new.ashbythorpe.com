@@ -9,18 +9,37 @@ import (
 	"ashbythorpe.com/website/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/log"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
 )
 
 func SetupAuthRoutes(app *fiber.App) {
 	app.Use(fetchMetadataMiddleware)
 
+	loginLimiter := limiter.New(limiter.Config{
+		Max: 5,
+		KeyGenerator: func(c fiber.Ctx) string {
+			return c.Get("CF-Connecting-IP")
+		},
+	})
+
+	emailLimiter := limiter.New(limiter.Config{
+		Max: 2,
+		KeyGenerator: func(c fiber.Ctx) string {
+			return c.Get("CF-Connecting-IP")
+		},
+	})
+
 	group := app.Group("/auth")
-	group.Post("/login", login)
+	group.Post("/login", loginLimiter, login)
 	group.Post("/logout", logout)
-	group.Post("/sign-up", signUp)
-	group.Post("/resend-verification", resendVerification)
-	group.Get("/verify-account/:token", verifyAccount)
+	group.Post("/sign-up", emailLimiter, signUp)
+	group.Post("/resend-verification", emailLimiter, resendVerification)
+	group.Post("/verify-account/:token", loginLimiter, verifyAccount)
+	group.Post("/request-password-reset", emailLimiter, requestPasswordReset)
+	group.Post("/reset-password", loginLimiter, resetPassword)
 	group.Get("/name", userIDmiddleware, getName)
+	group.Post("/github/login", githubLogin)
+	group.Get("/github/callback", loginLimiter, githubCallback)
 }
 
 type LoginData struct {
@@ -29,7 +48,7 @@ type LoginData struct {
 }
 
 func userIDmiddleware(c fiber.Ctx) error {
-	session := c.Cookies("session")
+	session := c.Cookies("__Host-Http-session")
 
 	id, err := db.VerifySession(c.RequestCtx(), session)
 	if err != nil {
@@ -45,7 +64,7 @@ func userIDmiddleware(c fiber.Ctx) error {
 }
 
 func authMiddleware(c fiber.Ctx) error {
-	session := c.Cookies("session")
+	session := c.Cookies("__Host-Http-session")
 
 	id, err := db.VerifySession(c.RequestCtx(), session)
 	if err != nil {
@@ -64,7 +83,7 @@ func authMiddleware(c fiber.Ctx) error {
 func fetchMetadataMiddleware(c fiber.Ctx) error {
 	fetchSite := c.Get("Sec-Fetch-Site")
 
-	if fetchSite == "" || fetchSite == "same-origin" || fetchSite == "same-site" {
+	if fetchSite == "" || fetchSite == "same-origin" {
 		return c.Next()
 	}
 
@@ -93,7 +112,7 @@ func login(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized user")
 	}
 
-	prevSession := c.Cookies("session")
+	prevSession := c.Cookies("__Host-Http-session")
 	if prevSession != "" {
 		err := db.DeleteSession(context.WithoutCancel(c.RequestCtx()), prevSession)
 		if err != nil {
@@ -112,10 +131,9 @@ func login(c fiber.Ctx) error {
 }
 
 type SignUpData struct {
-	Username string `json:"username"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 	Name     string `json:"name"`
-	Email    string `json:"email"`
 }
 
 func signUp(c fiber.Ctx) error {
@@ -128,10 +146,9 @@ func signUp(c fiber.Ctx) error {
 
 	id, err := db.CreateUser(
 		c.RequestCtx(),
-		signUpData.Username,
+		signUpData.Email,
 		signUpData.Password,
 		signUpData.Name,
-		signUpData.Email,
 	)
 	if err != nil {
 		return err
@@ -255,13 +272,13 @@ func verifyAccount(c fiber.Ctx) error {
 }
 
 func logout(c fiber.Ctx) error {
-	session := c.Cookies("session")
+	session := c.Cookies("__Host-Http-session")
 
 	if session != "" {
 		db.DeleteSession(context.WithoutCancel(c.RequestCtx()), session)
 	}
 
-	c.ClearCookie("session")
+	c.ClearCookie("__Host-Http-session")
 
 	return nil
 }
@@ -279,13 +296,12 @@ func getName(c fiber.Ctx) error {
 
 func setSessionCookie(c fiber.Ctx, session string) {
 	c.Cookie(&fiber.Cookie{
-		Name:     "session",
+		Name:     "__Host-Http-session",
 		Value:    session,
+		Path:     "/",
 		HTTPOnly: true,
 		Secure:   true,
 		SameSite: "Strict",
 		MaxAge:   7 * 86400,
 	})
 }
-
-// fiber:context-methods migrated

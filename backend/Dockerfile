@@ -16,7 +16,7 @@ RUN apt-get update && \
 
 COPY --from=litestream/litestream:latest /usr/local/bin/litestream /usr/local/bin/litestream
 
-COPY --from=litestream/litestream:latest /usr/local/bin/litestream /usr/local/bin/litestream
+COPY --from=cloudflare/cloudflared:latest /usr/local/bin/cloudflared /usr/local/bin/cloudflared
 
 WORKDIR /app
 

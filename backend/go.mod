@@ -9,7 +9,6 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/resend/resend-go/v2 v2.22.0
 	golang.org/x/crypto v0.50.0
-	golang.org/x/sync v0.20.0
 	modernc.org/sqlite v1.38.2
 )
 
