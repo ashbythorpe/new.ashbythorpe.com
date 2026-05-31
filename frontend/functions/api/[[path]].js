@@ -1,5 +1,5 @@
 export async function onRequest(context) {
-  const { request } = context;
+  const { request, env } = context;
   const url = new URL(request.url);
 
   url.hostname = "internal-go-api.local";
@@ -21,7 +21,7 @@ export async function onRequest(context) {
     return new Response(
       JSON.stringify({ error: "Internal Gateway Error", details: err.message }),
       {
-        status: 502,
+        status: 599,
         headers: { "Content-Type": "application/json" },
       },
     );
