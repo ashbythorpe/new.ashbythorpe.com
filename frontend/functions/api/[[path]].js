@@ -6,6 +6,8 @@ export async function onRequest(context) {
 
   url.pathname = url.pathname.replace(/^\/api/, "");
 
+  url.protocol = "http:";
+
   const modifiedRequest = new Request(url.toString(), {
     method: request.method,
     headers: request.headers,
