@@ -16,9 +16,6 @@ func Setup(app *fiber.App) {
 
 	app.Use(limiter.New(limiter.Config{
 		Max: 100,
-		KeyGenerator: func(c fiber.Ctx) string {
-			return c.Get("CF-Connecting-IP")
-		},
 	}))
 
 	app.Use(requestid.New())

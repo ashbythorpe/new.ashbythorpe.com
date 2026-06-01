@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"ashbythorpe.com/website/config"
+	"github.com/gofiber/fiber/v3/log"
 	"github.com/google/uuid"
 )
 
@@ -65,13 +66,6 @@ func DeleteSession(ctx context.Context, session string) error {
 }
 
 func CreateVerificationToken(ctx context.Context, userID int) (string, error) {
-	token, err := generateOTP()
-	if err != nil {
-		return "", err
-	}
-
-	expiry := time.Now().Add(time.Minute * 5).Unix()
-
 	existingTokensQuery := `
 	SELECT COUNT(*) FROM verification_tokens WHERE userID = ? AND created_at >= datetime('now', '-1 minute')
 	`
@@ -88,6 +82,12 @@ func CreateVerificationToken(ctx context.Context, userID int) (string, error) {
 
 	deleteQuery := "DELETE FROM verification_tokens WHERE userID = ?"
 	if _, err := DB.ExecContext(ctx, deleteQuery, userID); err != nil {
+		return "", err
+	}
+
+	expiry := time.Now().Add(time.Minute * 5).Unix()
+	token, err := generateOTP()
+	if err != nil {
 		return "", err
 	}
 
@@ -111,35 +111,41 @@ func DeleteVerificationToken(ctx context.Context, token string) error {
 }
 
 func CheckVerificationToken(ctx context.Context, token string) error {
+	tokenHash := HashOTP(token)
 	now := time.Now().Unix()
 
-	query := `
-	UPDATE users
-	SET verified = TRUE
-	WHERE id IN (
-		SELECT userID FROM verification_tokens WHERE token = ? AND expiry >= ?
+	tx, err := DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	row := tx.QueryRowContext(
+		ctx,
+		"SELECT userID FROM verification_tokens WHERE token = ? AND expiry >= ?",
+		tokenHash,
+		now,
 	)
-	`
 
-	tokenHash := HashOTP(token)
+	var userID int
+	if err := row.Scan(&userID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrInvalidToken
+		}
+		return err
+	}
 
-	res, err := DB.ExecContext(ctx, query, tokenHash, now)
+	_, err = tx.ExecContext(ctx, "DELETE FROM verification_tokens WHERE token = ?", token)
 	if err != nil {
 		return err
 	}
 
-	changedRows, err := res.RowsAffected()
+	_, err = tx.ExecContext(ctx, "UPDATE users SET verified = TRUE WHERE id = ?")
 	if err != nil {
 		return err
 	}
 
-	if changedRows == 0 {
-		return ErrInvalidToken
-	}
-
-	_, err = DB.ExecContext(ctx, "DELETE FROM verification_tokens WHERE token = ?", tokenHash)
-
-	return err
+	return tx.Commit()
 }
 
 func CreatePasswordResetToken(ctx context.Context, userID int) (string, error) {

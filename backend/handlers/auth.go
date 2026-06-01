@@ -1,10 +1,16 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"net/http"
+	"time"
 
+	"ashbythorpe.com/website/config"
 	"ashbythorpe.com/website/db"
 	"ashbythorpe.com/website/utils"
 	"github.com/gofiber/fiber/v3"
@@ -13,49 +19,46 @@ import (
 )
 
 func SetupAuthRoutes(app *fiber.App) {
-	app.Use(fetchMetadataMiddleware)
-
 	loginLimiter := limiter.New(limiter.Config{
 		Max: 5,
-		KeyGenerator: func(c fiber.Ctx) string {
-			return c.Get("CF-Connecting-IP")
-		},
 	})
 
 	emailLimiter := limiter.New(limiter.Config{
 		Max: 2,
-		KeyGenerator: func(c fiber.Ctx) string {
-			return c.Get("CF-Connecting-IP")
-		},
 	})
 
 	group := app.Group("/auth")
+	group.Get("/github/callback", loginLimiter, githubCallback)
+
+	app.Use(fetchMetadataMiddleware)
+
 	group.Post("/login", loginLimiter, login)
 	group.Post("/logout", logout)
-	group.Post("/sign-up", emailLimiter, signUp)
-	group.Post("/resend-verification", emailLimiter, resendVerification)
+	group.Post("/sign-up", loginLimiter, signUp)
+	group.Post("/send-verification", emailLimiter, sendVerification)
 	group.Post("/verify-account/:token", loginLimiter, verifyAccount)
 	group.Post("/request-password-reset", emailLimiter, requestPasswordReset)
 	group.Post("/reset-password", loginLimiter, resetPassword)
 	group.Get("/name", userIDmiddleware, getName)
-	group.Post("/github/login", githubLogin)
-	group.Get("/github/callback", loginLimiter, githubCallback)
+	group.Get("/github", githubLogin)
 }
 
 type LoginData struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Email          string `json:"email"`
+	Password       string `json:"password"`
+	TurnstileToken string `json:"turnstileToken"`
 }
 
 func userIDmiddleware(c fiber.Ctx) error {
-	session := c.Cookies("__Host-Http-session")
+	session := c.Cookies(config.Cookies.Session)
 
-	id, err := db.VerifySession(c.RequestCtx(), session)
+	id, err := db.VerifySession(c, session)
 	if err != nil {
 		if !errors.Is(err, db.ErrInvalidSession) {
 			logger := log.WithContext(c)
 			logger.Error(err)
 		}
+		c.Locals("userID", 0)
 	} else {
 		c.Locals("userID", id)
 	}
@@ -64,9 +67,9 @@ func userIDmiddleware(c fiber.Ctx) error {
 }
 
 func authMiddleware(c fiber.Ctx) error {
-	session := c.Cookies("__Host-Http-session")
+	session := c.Cookies(config.Cookies.Session)
 
-	id, err := db.VerifySession(c.RequestCtx(), session)
+	id, err := db.VerifySession(c, session)
 	if err != nil {
 		if errors.Is(err, db.ErrInvalidSession) {
 			return fiber.ErrUnauthorized
@@ -87,34 +90,42 @@ func fetchMetadataMiddleware(c fiber.Ctx) error {
 		return c.Next()
 	}
 
+	log.Error(c.Path(), " - Denied based on Sec-Fetch-Site: ", fetchSite)
+
 	return fiber.ErrUnauthorized
 }
 
 func login(c fiber.Ctx) error {
 	var loginData LoginData
 
-	err := c.Bind().Body(&loginData)
-	if err != nil {
+	if err := c.Bind().WithAutoHandling().JSON(&loginData); err != nil {
 		return err
 	}
 
-	result, err := db.ValidateUser(c.RequestCtx(), loginData.Username, loginData.Password)
+	if err := validateTurnstileToken(c, loginData.TurnstileToken); err != nil {
+		return err
+	}
+
+	result, err := db.ValidateUser(c, loginData.Email, loginData.Password)
 	if err != nil {
-		if errors.Is(err, db.ErrInvalidUsername) || errors.Is(err, db.ErrInvalidPassword) {
-			return fiber.NewError(fiber.StatusUnauthorized, "Invalid username or password")
+		if errors.Is(err, db.ErrInvalidEmail) || errors.Is(err, db.ErrInvalidPassword) {
+			return fiber.NewError(fiber.StatusUnauthorized, "Invalid email or password")
 		}
 
 		return err
 	}
 
 	if !result.Verified {
-		// TODO: Figure out what to do here: should we send a new verification code?
-		return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized user")
+		return &utils.AppError{
+			Status:  fiber.StatusUnauthorized,
+			Message: "User not verified",
+			Type:    "not-verified",
+		}
 	}
 
-	prevSession := c.Cookies("__Host-Http-session")
+	prevSession := c.Cookies(config.Cookies.Session)
 	if prevSession != "" {
-		err := db.DeleteSession(context.WithoutCancel(c.RequestCtx()), prevSession)
+		err := db.DeleteSession(context.WithoutCancel(c), prevSession)
 		if err != nil {
 			return err
 		}
@@ -131,67 +142,77 @@ func login(c fiber.Ctx) error {
 }
 
 type SignUpData struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Name     string `json:"name"`
+	Email          string `json:"email"`
+	Password       string `json:"password"`
+	Name           string `json:"name"`
+	TurnstileToken string `json:"turnstileToken"`
 }
 
 func signUp(c fiber.Ctx) error {
 	var signUpData SignUpData
 
-	err := c.Bind().Body(&signUpData)
+	err := c.Bind().WithAutoHandling().JSON(&signUpData)
 	if err != nil {
 		return err
 	}
 
-	id, err := db.CreateUser(
-		c.RequestCtx(),
+	if err := validateTurnstileToken(c, signUpData.TurnstileToken); err != nil {
+		return err
+	}
+
+	_, err = db.CreateUser(
+		c,
 		signUpData.Email,
 		signUpData.Password,
 		signUpData.Name,
 	)
 	if err != nil {
-		return err
-	}
+		if errors.Is(err, db.ErrEmailAlreadyExists) {
+			return &utils.AppError{
+				Status:  fiber.StatusBadRequest,
+				Message: "An account already exists with this email",
+			}
+		}
 
-	token, err := db.CreateVerificationToken(context.WithoutCancel(c.RequestCtx()), id)
-	if err != nil {
-		return err
-	}
-
-	err = utils.SendMagicLinkEmail(token, signUpData.Email)
-	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
-type ResendVerificationData struct {
+type VerificationData struct {
 	Email string `json:"email"`
 }
 
-func resendVerification(c fiber.Ctx) error {
-	var data ResendVerificationData
+func sendVerification(c fiber.Ctx) error {
+	var data VerificationData
 
-	if err := c.Bind().Body(&data); err != nil {
+	if err := c.Bind().WithAutoHandling().JSON(&data); err != nil {
 		return fiber.ErrBadRequest
 	}
 
 	result, err := db.GetUserStatusByEmail(c.Context(), data.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return c.SendStatus(fiber.StatusOK)
+			return nil
 		}
 		return err
 	}
 
 	if result.Verified {
-		return c.SendStatus(fiber.StatusOK)
+		return nil
 	}
 
 	token, err := db.CreateVerificationToken(context.WithoutCancel(c.Context()), result.ID)
 	if err != nil {
+		if errors.Is(err, db.ErrExistingToken) {
+			return &utils.AppError{
+				Status:  fiber.StatusBadRequest,
+				Message: "Existing token",
+				Type:    "existing-token",
+			}
+		}
+
 		return err
 	}
 
@@ -199,7 +220,7 @@ func resendVerification(c fiber.Ctx) error {
 		return err
 	}
 
-	return c.SendStatus(fiber.StatusOK)
+	return nil
 }
 
 type ForgotPasswordRequest struct {
@@ -208,15 +229,14 @@ type ForgotPasswordRequest struct {
 
 func requestPasswordReset(c fiber.Ctx) error {
 	var req ForgotPasswordRequest
-	if err := c.Bind().Body(&req); err != nil {
+	if err := c.Bind().WithAutoHandling().JSON(&req); err != nil {
 		return fiber.ErrBadRequest
 	}
 
 	result, err := db.GetUserStatusByEmail(c.Context(), req.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			// Prevent enumeration: pretend it worked
-			return c.SendStatus(fiber.StatusOK)
+			return nil
 		}
 		return err
 	}
@@ -230,7 +250,7 @@ func requestPasswordReset(c fiber.Ctx) error {
 		return err
 	}
 
-	return c.SendStatus(fiber.StatusOK)
+	return nil
 }
 
 type ResetPasswordSubmit struct {
@@ -240,7 +260,7 @@ type ResetPasswordSubmit struct {
 
 func resetPassword(c fiber.Ctx) error {
 	var req ResetPasswordSubmit
-	if err := c.Bind().Body(&req); err != nil {
+	if err := c.Bind().WithAutoHandling().JSON(&req); err != nil {
 		return fiber.ErrBadRequest
 	}
 
@@ -248,18 +268,19 @@ func resetPassword(c fiber.Ctx) error {
 
 	err := db.ChangePassword(safeCtx, req.Token, req.NewPassword)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid or expired reset link. Please request a new one.",
-		})
+		return &utils.AppError{
+			Status:  fiber.StatusBadRequest,
+			Message: "Invalid or expired reset link. Please request a new one.",
+		}
 	}
 
-	return c.SendStatus(fiber.StatusOK)
+	return nil
 }
 
 func verifyAccount(c fiber.Ctx) error {
 	token := c.Params("token")
 
-	err := db.CheckVerificationToken(c.RequestCtx(), token)
+	err := db.CheckVerificationToken(c, token)
 	if err != nil {
 		if errors.Is(err, db.ErrInvalidToken) {
 			return c.Redirect().To("/sign-up.html?invalid-token=true")
@@ -272,19 +293,19 @@ func verifyAccount(c fiber.Ctx) error {
 }
 
 func logout(c fiber.Ctx) error {
-	session := c.Cookies("__Host-Http-session")
+	session := c.Cookies(config.Cookies.Session)
 
 	if session != "" {
-		db.DeleteSession(context.WithoutCancel(c.RequestCtx()), session)
+		db.DeleteSession(context.WithoutCancel(c), session)
 	}
 
-	c.ClearCookie("__Host-Http-session")
+	c.ClearCookie(config.Cookies.Session)
 
 	return nil
 }
 
 func getName(c fiber.Ctx) error {
-	id := c.Locals("userID", 0).(int)
+	id := c.Locals("userID").(int)
 
 	name, err := db.GetUserName(c, id)
 	if err != nil {
@@ -296,7 +317,7 @@ func getName(c fiber.Ctx) error {
 
 func setSessionCookie(c fiber.Ctx, session string) {
 	c.Cookie(&fiber.Cookie{
-		Name:     "__Host-Http-session",
+		Name:     config.Cookies.Session,
 		Value:    session,
 		Path:     "/",
 		HTTPOnly: true,
@@ -304,4 +325,79 @@ func setSessionCookie(c fiber.Ctx, session string) {
 		SameSite: "Strict",
 		MaxAge:   7 * 86400,
 	})
+}
+
+type TurnstileRequest struct {
+	Secret         string `json:"secret"`
+	Response       string `json:"response"`
+	RemoteIP       string `json:"remoteip"`
+	IdempotencyKey string `json:"idempotency_key"`
+}
+
+type TurnstileResponse struct {
+	Success    bool     `json:"success"`
+	ErrorCodes []string `json:"error-codes"`
+}
+
+func validateTurnstileToken(c fiber.Ctx, token string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	body := TurnstileRequest{
+		Secret:         config.TurnstileSecret,
+		Response:       token,
+		RemoteIP:       c.IP(),
+		IdempotencyKey: rand.Text(),
+	}
+
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	for attempt := 1; attempt <= 3; attempt++ {
+		if err, retry := TryValidateTurnstile(ctx, jsonBody, client); err != nil {
+			if retry {
+				logger := log.WithContext(c)
+				logger.Error(err)
+
+				time.Sleep(500 * time.Millisecond)
+			} else {
+				return err
+			}
+		} else {
+			return nil
+		}
+	}
+
+	return fiber.ErrServiceUnavailable
+}
+
+func TryValidateTurnstile(ctx context.Context, jsonBody []byte, client *http.Client) (error, bool) {
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://challenges.cloudflare.com/turnstile/v0/siteverify", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return err, false
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err, true
+	}
+	defer resp.Body.Close()
+
+	var response TurnstileResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return err, false
+	}
+
+	if !response.Success {
+		return fiber.ErrUnauthorized, false
+	}
+
+	return nil, false
 }

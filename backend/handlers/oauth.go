@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,7 +13,9 @@ import (
 
 	"ashbythorpe.com/website/config"
 	"ashbythorpe.com/website/db"
+	"ashbythorpe.com/website/utils"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/log"
 )
 
 type GithubAccessTokenResponse struct {
@@ -35,22 +36,16 @@ type GithubEmail struct {
 	Verified bool   `json:"verified"`
 }
 
-func generateState() string {
-	b := make([]byte, 16)
-	rand.Read(b)
-	return hex.EncodeToString(b)
-}
-
 func githubLogin(c fiber.Ctx) error {
-	state := generateState()
+	state := rand.Text()
 
 	verifier := generateCodeVerifier()
 	challenge := generateCodeChallenge(verifier)
 
 	c.Cookie(&fiber.Cookie{
-		Name:     "__Host-Http-oauth_state",
+		Name:     config.Cookies.OAuthState,
 		Value:    state,
-		Path: "/",
+		Path:     "/",
 		MaxAge:   60 * 10,
 		HTTPOnly: true,
 		Secure:   true,
@@ -58,16 +53,16 @@ func githubLogin(c fiber.Ctx) error {
 	})
 
 	c.Cookie(&fiber.Cookie{
-		Name:     "__Host-Http-oauth_verifier",
-		Value:    verifier, // Save the UNHASHED secret
-		Path: "/",
+		Name:     config.Cookies.OAuthVerifier,
+		Value:    verifier,
+		Path:     "/",
 		MaxAge:   60 * 10,
 		HTTPOnly: true,
 		Secure:   true,
 		SameSite: "Lax",
 	})
 
-	redirectURI := fmt.Sprintf("http://%s/auth/github/callback", config.Host)
+	redirectURI := fmt.Sprintf("%s/api/auth/github/callback", config.Host)
 
 	githubAuthURL := fmt.Sprintf(
 		"https://github.com/login/oauth/authorize?client_id=%s&redirect_uri=%s&state=%s&scope=user:email&code_challenge=%s&code_challenge_method=S256",
@@ -78,33 +73,40 @@ func githubLogin(c fiber.Ctx) error {
 }
 
 func githubCallback(c fiber.Ctx) error {
-	cookieState := c.Cookies("__Host-Http-oauth_state")
+	log.Info("We're inside!")
 	urlState := c.Query("state")
 	code := c.Query("code")
 
-	verifier := c.Cookies("__Host-Http-oauth_verifier")
+	cookieState := c.Cookies(config.Cookies.OAuthState)
+	verifier := c.Cookies(config.Cookies.OAuthVerifier)
 
-	c.ClearCookie("__Host-Http-oauth_state")
-	c.ClearCookie("__Host-Http-oauth_verifier")
+	c.ClearCookie(config.Cookies.OAuthVerifier)
+	c.ClearCookie(config.Cookies.OAuthVerifier)
 
 	if cookieState == "" || cookieState != urlState {
-		return c.Status(fiber.StatusUnauthorized).SendString("Invalid OAuth state")
+		return &utils.AppError{
+			Status:  fiber.StatusUnauthorized,
+			Message: "Invalid OAuth state",
+		}
 	}
 
 	if code == "" || verifier == "" {
-		return c.Status(fiber.StatusBadRequest).SendString("Missing code or verifier")
+		return &utils.AppError{
+			Status:  fiber.StatusBadRequest,
+			Message: "Missing code or verifier",
+		}
 	}
 
+	redirectURI := fmt.Sprintf("%s/api/auth/github/callback", config.Host)
 	netCtx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	tokenURL := fmt.Sprintf(
-		"https://github.com/login/oauth/access_token?client_id=%s&client_secret=%s&code=%s&code_verifier=%s",
-		config.GitHubClientID, config.GitHubClientSecret, code, verifier,
+		"https://github.com/login/oauth/access_token?client_id=%s&client_secret=%s&code=%s&redirect_uri=%s&code_verifier=%s",
+		config.GitHubClientID, config.GitHubClientSecret, code, url.QueryEscape(redirectURI), verifier,
 	)
 
 	req, err := http.NewRequestWithContext(netCtx, "POST", tokenURL, nil)
-
 	if err != nil {
 		return err
 	}
@@ -124,7 +126,6 @@ func githubCallback(c fiber.Ctx) error {
 	}
 
 	userReq, err := http.NewRequestWithContext(netCtx, "GET", "https://api.github.com/user", nil)
-
 	if err != nil {
 		return err
 	}
@@ -143,7 +144,6 @@ func githubCallback(c fiber.Ctx) error {
 	}
 
 	emailReq, err := http.NewRequestWithContext(netCtx, "GET", "https://api.github.com/user/emails", nil)
-
 	if err != nil {
 		return err
 	}
@@ -170,7 +170,10 @@ func githubCallback(c fiber.Ctx) error {
 	}
 
 	if primaryEmail == "" {
-		return c.Status(fiber.StatusBadRequest).SendString("No verified primary email found on GitHub account")
+		return &utils.AppError{
+			Status:  fiber.StatusBadRequest,
+			Message: "No verified primary email found on GitHub account",
+		}
 	}
 
 	if githubUser.Name == "" {

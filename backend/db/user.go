@@ -7,7 +7,10 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/gofiber/fiber/v3/log"
 	"golang.org/x/crypto/argon2"
+	"modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite/lib"
 )
 
 type User struct {
@@ -29,6 +32,11 @@ func CreateUser(ctx context.Context, email string, password string, name string)
 	var id int
 	err := res.Scan(&id)
 	if err != nil {
+		if sqlErr, ok := errors.AsType[*sqlite.Error](err); ok {
+			if sqlErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+				return 0, ErrEmailAlreadyExists
+			}
+		}
 		return 0, err
 	}
 
@@ -83,8 +91,9 @@ func GetUser(ctx context.Context, id int) (*User, error) {
 }
 
 var (
-	ErrInvalidUsername = errors.New("invalid username")
+	ErrInvalidEmail = errors.New("invalid email")
 	ErrInvalidPassword = errors.New("invalid password")
+	ErrEmailAlreadyExists = errors.New("email already exists")
 )
 
 type UserResult struct {
@@ -101,10 +110,10 @@ func ValidateUser(ctx context.Context, email string, password string) (UserResul
 
 	var result UserResult
 	var hashedPassword HashedPassword
-	err := res.Scan(&result.ID, &hashedPassword.hash, &hashedPassword.salt, &result.ID)
+	err := res.Scan(&result.ID, &hashedPassword.hash, &hashedPassword.salt, &result.Verified)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return result, ErrInvalidUsername
+			return result, ErrInvalidEmail
 		}
 
 		return result, err
@@ -130,17 +139,21 @@ func GetUserStatusByEmail(ctx context.Context, email string) (UserResult, error)
 }
 
 func GetUserName(ctx context.Context, id int) (*string, error) {
+	log.Info(id)
 	query := "SELECT name FROM users WHERE id = ?"
 
 	var name *string
 	row := DB.QueryRowContext(ctx, query, id)
 	if err := row.Scan(&name); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			log.Info("No rows found")
 			return nil, nil
 		}
 
 		return nil, err
 	}
+
+	log.Info("Name found: %s", name)
 
 	return name, nil
 }

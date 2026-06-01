@@ -18,20 +18,29 @@ import (
 var migrations embed.FS
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Println(err)
 	}
 
-	err = config.Init()
-	if err != nil {
+	if err := config.Init(); err != nil {
 		log.Fatal(err)
 	}
 
-	app := fiber.New(fiber.Config{
+	cfg := &fiber.Config{
 		ErrorHandler: func(c fiber.Ctx, err error) error {
+			appError := utils.AppError{
+				Status:  fiber.StatusInternalServerError,
+				Message: "Internal error",
+				Type:    "",
+			}
+
 			if e, ok := errors.AsType[*fiber.Error](err); ok {
-				return fiber.DefaultErrorHandler(c, e)
+				appError.Status = e.Code
+				appError.Message = e.Message
+			}
+
+			if e, ok := errors.AsType[*utils.AppError](err); ok {
+				appError = *e
 			}
 
 			traceID := requestid.FromContext(c)
@@ -39,9 +48,7 @@ func main() {
 			log.Printf("[ID: %s] %s %s: %v",
 				traceID, c.Method(), c.Path(), err)
 
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"message": "Internal error",
-			})
+			return c.Status(appError.Status).JSON(appError)
 		},
 		TrustProxy:  true,
 		ProxyHeader: "CF-Connecting-IP",
@@ -51,14 +58,16 @@ func main() {
 				"::1",
 			},
 		},
-	})
+	}
 
-	err = db.Init(migrations)
-	if err != nil {
+	
+	if err := db.Init(migrations); err != nil {
 		log.Fatal(err)
 	}
 
 	utils.SetupResend()
+
+	app := fiber.New(*cfg)
 
 	handlers.Setup(app)
 

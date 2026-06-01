@@ -25,7 +25,7 @@ type CommentsResult struct {
 
 func getComments(c fiber.Ctx) error {
 	postName := c.Params("post")
-	userID := c.Locals("userID", 0).(int)
+	userID := c.Locals("userID").(int)
 	page, err := strconv.Atoi(c.Query("page", "1"))
 	if err != nil {
 		return err
@@ -64,9 +64,9 @@ func getReplies(c fiber.Ctx) error {
 		return err
 	}
 
-	userID := c.Locals("userID", 0).(int)
+	userID := c.Locals("userID").(int)
 
-	replies, err := db.GetReplies(c.RequestCtx(), postName, id, userID)
+	replies, err := db.GetReplies(c, postName, id, userID)
 	if err != nil {
 		return err
 	}
@@ -85,14 +85,14 @@ type CommentResult struct {
 
 func createComment(c fiber.Ctx) error {
 	postName := c.Params("post")
-	userID := c.Locals("userID", 0).(int)
+	userID := c.Locals("userID").(int)
 
 	var opts CommentOpts
-	if err := c.Bind().Body(&opts); err != nil {
+	if err := c.Bind().WithAutoHandling().JSON(&opts); err != nil {
 		return err
 	}
 
-	id, err := db.CreateComment(c.RequestCtx(), postName, userID, opts.Text, opts.ReplyTo)
+	id, err := db.CreateComment(c, postName, userID, opts.Text, opts.ReplyTo)
 	if err != nil {
 		return err
 	}
@@ -105,26 +105,26 @@ type EditOpts struct {
 }
 
 func editComment(c fiber.Ctx) error {
-	userID := c.Locals("userID", 0).(int)
+	userID := c.Locals("userID").(int)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return err
 	}
 
 	var opts EditOpts
-	if err := c.Bind().Body(&opts); err != nil {
+	if err := c.Bind().WithAutoHandling().JSON(&opts); err != nil {
 		return err
 	}
 
-	return db.EditComment(c.RequestCtx(), id, userID, opts.Text)
+	return db.EditComment(c, id, userID, opts.Text)
 }
 
 func deleteComment(c fiber.Ctx) error {
-	userID := c.Locals("userID", 0).(int)
+	userID := c.Locals("userID").(int)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return err
 	}
 
-	return db.DeleteComment(c.RequestCtx(), id, userID)
+	return db.DeleteComment(c, id, userID)
 }
