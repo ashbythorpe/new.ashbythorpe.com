@@ -65,6 +65,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	cfg.Services = append(cfg.Services, db.NewDBCleanupService(db.DB))
+
 	utils.SetupResend()
 
 	app := fiber.New(*cfg)
