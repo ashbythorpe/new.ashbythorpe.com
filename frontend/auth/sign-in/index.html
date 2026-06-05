@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.ico" />
+    <title>Contact</title>
+    <link rel="preconnect" href="https://challenges.cloudflare.com" />
+    <script
+      src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+      defer
+    ></script>
+    <script type="module" src="../../src/sign-in.ts"></script>
+  </head>
+  <body>
+    <nav-bar></nav-bar>
+    <main>
+      <auth-form>
+        <div slot="log-in-turnstile" id="log-in-turnstile"></div>
+        <div slot="sign-up-turnstile" id="sign-up-turnstile"></div>
+      </auth-form>
+    </main>
+  </body>
+</html>

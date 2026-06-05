@@ -1,0 +1,36 @@
+<link rel="stylesheet" href="style.css" />
+<div class="auth-card">
+  <div class="form-body">
+    <form id="reset-password-form" class="view">
+      <div class="input-group">
+        <label for="login-password">New Password</label>
+        <input
+          type="password"
+          id="new-password"
+          name="password"
+          required
+          placeholder="••••••••"
+          autocomplete="new-password"
+        />
+      </div>
+      <div class="input-group">
+        <label for="login-password">Confirm Password</label>
+        <input
+          type="password"
+          id="confirm-password"
+          name="confirm-password"
+          required
+          placeholder="••••••••"
+          autocomplete="new-password"
+        />
+      </div>
+      <slot name="log-in-turnstile"></slot>
+      <div>
+        <button id="reset-password-submit" type="submit" class="submit-btn">
+          Reset Password
+        </button>
+        <p id="error" class="error"></p>
+      </div>
+    </form>
+  </div>
+</div>

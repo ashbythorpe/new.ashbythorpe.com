@@ -49,7 +49,7 @@ export class ReplyList extends Component {
                             ...replies.map((reply) =>
                                 BlogComment.create({
                                     id: reply.id,
-                                    content: reply.text,
+                                    content: reply.content,
                                     author: reply.author,
                                     time: duration(new Date(reply.createdAt)),
                                     owned: reply.owned,

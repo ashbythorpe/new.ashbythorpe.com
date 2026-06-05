@@ -97,11 +97,45 @@ nav {
 :host([selected="blog"]) #navbar-blog {
 	background-color: rgb(from var(--color-black-700) r g b / 0.1);
 }
+:host(:not(:state(signed-in))) #github-container #logout-btn {
+	display: none;
+}
 
 #github-container {
 	display: flex;
 	justify-content: end;
 	align-items: center;
+	gap: 0.25rem;
+
+	#logout-btn {
+		display: flex;
+		align-items: center;
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		font-family: inherit;
+		font-size: 1rem;
+		font-weight: 500;
+		color: inherit;
+		padding-inline: 0.25rem;
+		padding-block: 0.5rem;
+		border-radius: 0.375rem;
+
+		&:hover {
+			text-decoration-line: underline;
+			background-color: rgb(from var(--color-black-700) r g b / 0.15);
+		}
+
+		.icon {
+			width: 1.5rem;
+			height: 1.5rem;
+		}
+
+		span {
+			margin-left: 0.5rem;
+			display: none; /* Hidden on mobile */
+		}
+	}
 
 	#github-border {
 		height: 100%;
@@ -140,6 +174,14 @@ nav {
 			span {
 				display: block;
 			}
+		}
+	}
+
+	#github-container {
+		gap: 1rem;
+
+		#logout-btn span {
+			display: block;
 		}
 	}
 

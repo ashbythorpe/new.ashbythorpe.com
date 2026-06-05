@@ -28,9 +28,6 @@ export default defineConfig({
             },
         ]),
     ],
-    oxc: {
-        target: "es2022",
-    },
     appType: "mpa",
     build: {
         rolldownOptions: {

@@ -125,12 +125,18 @@ export class BlogComment extends Component {
         });
 
         this.select("#delete-btn").addEventListener("click", async () => {
-            const result = await fetch(`/api/post/${postName()}/delete-comment/${this.#id}`, {
-                method: "POST",
-            });
+            const result = await fetch(
+                `/api/post/${postName()}/comment/${this.#id}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                },
+            );
 
             if (!result.ok) {
-                throw new Error(await result.text())
+                throw new Error(await result.text());
             }
 
             this.remove();
@@ -155,6 +161,9 @@ export class BlogComment extends Component {
 
             await fetch(`/api/post/${postName()}/edit-comment/${this.#id}`, {
                 method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
                 body: JSON.stringify({ text: newText }),
             });
         });

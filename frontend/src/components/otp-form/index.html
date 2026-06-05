@@ -1,0 +1,92 @@
+<link rel="stylesheet" href="style.css" />
+<div class="auth-card">
+  <div class="icon-container">
+    <svg
+      class="icon"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+      ></path>
+    </svg>
+  </div>
+
+  <h2>Check your email</h2>
+  <p class="subtitle">
+    We sent a 6-digit verification code to <br /><strong id="target-email"
+      >your email</strong
+    >.
+  </p>
+
+  <form id="otp-form">
+    <div class="otp-container">
+      <input
+        type="text"
+        class="otp-input"
+        maxlength="1"
+        pattern="[0-9]*"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        required
+      />
+      <input
+        type="text"
+        class="otp-input"
+        maxlength="1"
+        pattern="[0-9]*"
+        inputmode="numeric"
+        required
+      />
+      <input
+        type="text"
+        class="otp-input"
+        maxlength="1"
+        pattern="[0-9]*"
+        inputmode="numeric"
+        required
+      />
+      <input
+        type="text"
+        class="otp-input"
+        maxlength="1"
+        pattern="[0-9]*"
+        inputmode="numeric"
+        required
+      />
+      <input
+        type="text"
+        class="otp-input"
+        maxlength="1"
+        pattern="[0-9]*"
+        inputmode="numeric"
+        required
+      />
+      <input
+        type="text"
+        class="otp-input"
+        maxlength="1"
+        pattern="[0-9]*"
+        inputmode="numeric"
+        required
+      />
+    </div>
+
+    <p class="error" id="otp-error"></p>
+
+    <button type="submit" id="verify-btn" class="submit-btn">
+      Verify Account
+    </button>
+  </form>
+
+  <div class="resend-text">
+    Didn't receive the code?
+    <button type="button" id="resend-btn" class="resend-btn">
+      Click to resend
+    </button>
+  </div>
+</div>

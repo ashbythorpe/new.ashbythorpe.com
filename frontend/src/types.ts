@@ -15,7 +15,7 @@ export interface CommentData {
 export interface Comment {
     id: number;
     author: string;
-    text: string;
+    content: string;
     createdAt: string;
     owned: boolean
 }

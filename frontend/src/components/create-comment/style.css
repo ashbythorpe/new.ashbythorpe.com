@@ -1,0 +1,211 @@
+:host {
+  display: block;
+  width: 100%;
+  margin-top: 2rem; /* mt-8 */
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+.auth-prompt {
+  display: none; /* Hidden by default */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  width: 83.333333%;
+  padding: 2rem;
+  /* border: 1px dashed rgba(156, 163, 175, 0.7); */
+  /* border-radius: 0.5rem; */
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.auth-prompt p {
+  margin: 0 0 1rem 0;
+  color: #4b5563; /* gray-600 */
+  font-size: 1rem;
+}
+
+.sign-in-btn {
+  text-decoration: none;
+  background-color: #3730a3; /* indigo-800 */
+  color: #ffffff;
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sign-in-btn:hover {
+  background-color: #312e81; /* indigo-900 */
+}
+
+/* State Toggling for Auth */
+:host(:state(signed-out)) .form-container {
+  display: none;
+}
+:host(:state(signed-out)) .auth-prompt {
+  display: flex;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+  width: 83.333333%; /* w-5/6 */
+  border-bottom: 1px solid rgba(156, 163, 175, 0.7); /* border-b-gray-400/70 */
+  padding-bottom: 1rem; /* pb-4 */
+}
+
+@media (min-width: 768px) {
+  .form-container {
+    flex-direction: row;
+  }
+}
+
+.input-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* --- Status Indicators (Editing / Replying) --- */
+.status-indicator {
+  display: none; /* Hidden by default */
+  align-items: center;
+  font-size: 0.875rem; /* text-sm */
+  color: #9ca3af; /* text-gray-400 approx */
+  gap: 0.25rem; /* space-x-1 */
+  margin-bottom: 0.25rem;
+}
+
+:host(:state(editing)) #edit-indicator {
+  display: flex;
+}
+:host(:state(replying)) #reply-indicator {
+  display: flex;
+}
+
+.cancel-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #d1d5db; /* text-gray-300 */
+  padding-left: 0.25rem;
+  display: flex;
+  align-items: center;
+}
+.cancel-btn:hover {
+  color: #9ca3af;
+}
+
+.reply-target {
+  font-weight: 700;
+} /* font-bold */
+
+/* --- Text Input Area --- */
+.user-badge {
+  background-color: #3730a3; /* bg-indigo-800 */
+  color: #f3f4f6; /* text-black-100 approx */
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 600; /* font-semibold */
+  padding: 0.25rem 1rem; /* py-1 px-4 */
+  border-top-left-radius: 0.25rem;
+  border-top-right-radius: 0.25rem;
+}
+
+.textarea-wrapper {
+  width: 83.333333%; /* w-5/6 */
+}
+
+textarea {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.25rem 0.5rem; /* py-1 px-2 */
+  border-radius: 0.25rem;
+  outline: none;
+  border: none;
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+  box-sizing: border-box;
+  box-shadow: 0 0 0 1px #b0b0b0;
+  transition: box-shadow 0.2s ease;
+}
+
+textarea:focus {
+  box-shadow: 0 0 0 2px #92a2e7;
+}
+
+/* --- Submit Button Area --- */
+.action-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+  margin: 0.5rem 2.5rem 0 2.5rem; /* mt-2 mx-10 */
+}
+
+@media (min-width: 768px) {
+  .action-section {
+    justify-content: center;
+    margin: 0 2rem 0 0; /* mt-0 mx-0 mr-8 */
+    padding-top: 1.5rem; /* mt-6 equivalent */
+  }
+}
+
+.submit-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background-color: #fbd38d; /* jaffa-300 approx */
+  color: #111827; /* text-black-900 */
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.submit-btn:hover {
+  background-color: #f6ad55; /* jaffa-200 approx */
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (min-width: 768px) {
+  .submit-btn {
+    background-color: transparent;
+    color: #6366f1; /* text-indigo-500 */
+  }
+  .submit-btn:hover {
+    background-color: transparent;
+    color: #3730a3; /* text-indigo-800 */
+  }
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+}
+.icon-sm {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* --- Error Messages --- */
+.error-text {
+  color: #ef4444; /* text-red-500 */
+  font-size: 0.875rem;
+  margin: 0.25rem 0 0 0;
+}

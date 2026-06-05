@@ -1,0 +1,139 @@
+:host {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 70vh;
+  font-family: inherit;
+}
+
+.auth-card {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 30rem;
+  border-radius: 0.5rem;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  padding: 2.5rem 2rem;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.icon-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 3rem;
+  height: 3rem;
+  background-color: #e0e7ff; /* indigo-100 */
+  color: #4f46e5; /* indigo-600 */
+  border-radius: 50%;
+  margin: 0 auto 1.25rem auto;
+}
+
+.icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827; /* gray-900 */
+}
+
+p.subtitle {
+  margin: 0 0 2rem 0;
+  font-size: 0.875rem;
+  color: #4b5563; /* gray-600 */
+  line-height: 1.5;
+}
+
+/* --- OTP Inputs --- */
+.otp-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.otp-input {
+  width: 3rem;
+  height: 3.5rem;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  border: 1px solid #d1d5db; /* gray-300 */
+  background-color: #ffffff;
+  color: #111827;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  /* Hide standard number spinners */
+  -moz-appearance: textfield;
+}
+
+.otp-input::-webkit-outer-spin-button,
+.otp-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.otp-input:focus {
+  outline: none;
+  border-color: #6366f1; /* indigo-500 */
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* Submit Button */
+.submit-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #4f46e5;
+  color: #ffffff;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submit-btn:hover {
+  background-color: #4338ca;
+}
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Resend Link */
+.resend-text {
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: #6b7280; /* gray-500 */
+}
+
+.resend-btn {
+  background: none;
+  border: none;
+  color: #4f46e5;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+
+.resend-btn:hover {
+  text-decoration: underline;
+}
+.resend-btn:disabled {
+  color: #9ca3af;
+  text-decoration: none;
+  cursor: default;
+}

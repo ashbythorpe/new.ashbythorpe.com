@@ -116,7 +116,7 @@ export abstract class Component extends HTMLElement {
         return this.shadowRoot.querySelectorAll(selectors) as NodeListOf<T>;
     }
 
-    protected addSlot(slot: string | null, content: Node | string) {
+    addSlot(slot: string | null, content: Node | string) {
         let node;
         if (typeof content === "string") {
             if (slot === null) {
@@ -136,6 +136,7 @@ export abstract class Component extends HTMLElement {
         this.appendChild(node);
     }
 
+    static observedAttributes?: string[];
     connectedCallback?(): void;
     disconnectedCallback?(): void;
     connectedMoveCallback?(): void;
