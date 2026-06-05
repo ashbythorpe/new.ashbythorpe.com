@@ -1,27 +1,24 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{{TITLE}}</title>
     <script type="module" src="/src/post.ts"></script>
   </head>
   <body>
     <nav-bar></nav-bar>
-    <div id="header">
-      <div id="header-content">
-        {{HEADER}}
+    <header id="header">
+      <div id="header-content">{{HEADER}}</div>
+    </header>
+    <main>
+      <div id="blog-content">{{CONTENT}}</div>
+      <div id="comments">
+        <h1 id="comments-header">Comments</h1>
+        <div id="comments-container"></div>
+        <blog-pagination></blog-pagination>
       </div>
-    </div>
-    <div id="blog-content">
-      {{CONTENT}}
-    </div>
-    <div id="comments">
-      <h1 id="comments-header">Comments</h1>
-      <div id="comments-container">
-      </div>
-      <blog-pagination></blog-pagination>
-    </div>
-    <create-comment></create-comment>
+      <create-comment></create-comment>
+    </main>
   </body>
 </html>
