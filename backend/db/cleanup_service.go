@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v3/log"
 )
 
-// implements fiber.Service
+// DBCleanupService implements fiber.Service
 type DBCleanupService struct {
     db     *sql.DB
     state  string

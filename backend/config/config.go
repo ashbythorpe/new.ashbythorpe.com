@@ -12,6 +12,8 @@ var (
 	GitHubClientSecret string
 	Pepper             string
 	TurnstileSecret    string
+	CloudflareZoneID   string
+	CloudflareAPIToken string
 	DevMode            bool
 	Cookies            CookieNames
 )
@@ -37,6 +39,8 @@ func Init() error {
 	GitHubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
 	Pepper = os.Getenv("PEPPER")
 	TurnstileSecret = os.Getenv("TURNSTILE_SECRET_KEY")
+	CloudflareZoneID = os.Getenv("CLOUDFLARE_ZONE_ID")
+	CloudflareAPIToken = os.Getenv("CLOUDFLARE_API_TOKEN")
 	DevMode = os.Getenv("DEV") != ""
 
 	if DevMode {

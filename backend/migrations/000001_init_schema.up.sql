@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BLOB PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
     github_id TEXT UNIQUE,
@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS user_passwords (
-    user_id INTEGER PRIMARY KEY,
+    user_id BLOB PRIMARY KEY,
     password BLOB NOT NULL,
     salt BLOB NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS user_passwords (
 CREATE TABLE IF NOT EXISTS user_oauth (
     provider TEXT NOT NULL,
     provider_id TEXT NOT NULL,
-    user_id INTEGER NOT NULL,
+    user_id BLOB NOT NULL,
 
     PRIMARY KEY (provider, provider_id),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -24,14 +24,14 @@ CREATE TABLE IF NOT EXISTS user_oauth (
 
 CREATE TABLE IF NOT EXISTS sessions (
     id BLOB PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    user_id BLOB NOT NULL,
     expiry INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS verification_tokens (
     token BLOB PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    user_id BLOB NOT NULL,
     expiry INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS verification_tokens (
 
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
     token BLOB PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    user_id BLOB NOT NULL,
     expiry INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 CREATE TABLE IF NOT EXISTS comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     post_name TEXT NOT NULL,
-    user_id INTEGER NOT NULL,
+    user_id BLOB NOT NULL,
     content TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     reply_to INTEGER,

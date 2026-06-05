@@ -12,10 +12,10 @@ export class BlogComment extends Component {
 
     static create({
         id,
+        userID,
         content,
         author,
         time,
-        owned,
         replyTo,
         originalReplyTo,
         numReplies,
@@ -31,7 +31,7 @@ export class BlogComment extends Component {
         element.id = `comment-${id}`;
         element.setAttribute("comment-id", String(id));
 
-        if (owned) {
+        if (author.id) {
             element.internals.states.add("owned");
         }
 
@@ -45,11 +45,11 @@ export class BlogComment extends Component {
         }
 
         // Author slot
-        element.addSlot("author", author);
+        element.addSlot("author", author.name);
         element.addSlot("time", time);
 
         if (numReplies !== undefined && numReplies !== 0) {
-            const replies = ReplyList.create({ id, numReplies });
+            const replies = ReplyList.create({ id, userID, numReplies });
             element.addSlot("replies", replies);
         }
 

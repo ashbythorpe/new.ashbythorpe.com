@@ -1,9 +1,9 @@
 export interface CommentData {
     id: number;
+    userID: string | null;
     content: string;
-    author: string;
+    author: User;
     time: string;
-    owned: boolean;
     replyTo?: {
         id: number;
         name: string;
@@ -14,10 +14,9 @@ export interface CommentData {
 
 export interface Comment {
     id: number;
-    author: string;
+    author: User;
     content: string;
     createdAt: string;
-    owned: boolean
 }
 
 export interface OriginalComment extends Comment {
@@ -31,3 +30,9 @@ export interface Reply extends Comment {
     };
     originalReplyTo: number;
 }
+
+export interface User {
+    id: string;
+    name: string;
+}
+

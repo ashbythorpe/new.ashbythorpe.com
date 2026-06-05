@@ -5,6 +5,7 @@ import type { Reply } from "../../types";
 import { BlogComment } from "../comment";
 
 export interface Params {
+    userID: string | null;
     id: number;
     numReplies: number;
 }
@@ -12,13 +13,15 @@ export interface Params {
 @element("reply-list", "./index.html")
 export class ReplyList extends Component {
     #id!: number;
+    #userID!: string | null;
     #loading: boolean = false;
     #loaded: boolean = false;
 
-    static create({ id, numReplies }: Params): ReplyList {
+    static create({ id, userID, numReplies }: Params): ReplyList {
         const element = document.createElement("reply-list") as ReplyList;
 
         element.#id = id;
+        element.#userID = userID;
 
         element.addSlot("num-replies", numReplies.toString());
 
@@ -49,10 +52,10 @@ export class ReplyList extends Component {
                             ...replies.map((reply) =>
                                 BlogComment.create({
                                     id: reply.id,
+                                    userID: this.#userID,
                                     content: reply.content,
                                     author: reply.author,
                                     time: duration(new Date(reply.createdAt)),
-                                    owned: reply.owned,
                                     replyTo: reply.replyTo,
                                     originalReplyTo: reply.originalReplyTo,
                                 }),

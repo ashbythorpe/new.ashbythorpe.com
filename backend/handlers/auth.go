@@ -28,7 +28,7 @@ func SetupAuthRoutes(app *fiber.App) {
 	})
 
 	group := app.Group("/auth")
-	group.Get("/github/callback", loginLimiter, githubCallback)
+	group.Get("/github/callback", loginLimiter, dontCache, githubCallback)
 
 	app.Use(fetchMetadataMiddleware)
 
@@ -39,8 +39,8 @@ func SetupAuthRoutes(app *fiber.App) {
 	group.Post("/verify-account/:token", loginLimiter, verifyAccount)
 	group.Post("/request-password-reset", emailLimiter, requestPasswordReset)
 	group.Post("/reset-password", loginLimiter, resetPassword)
-	group.Get("/name", userIDmiddleware, getName)
-	group.Get("/github", githubLogin)
+	group.Get("/user", dontCache, getUser)
+	group.Get("/github", dontCache, githubLogin)
 }
 
 type LoginData struct {
@@ -49,19 +49,10 @@ type LoginData struct {
 	TurnstileToken string `json:"turnstileToken"`
 }
 
-func userIDmiddleware(c fiber.Ctx) error {
-	session := c.Cookies(config.Cookies.Session)
-
-	id, err := db.VerifySession(c, session)
-	if err != nil {
-		if !errors.Is(err, db.ErrInvalidSession) {
-			logger := log.WithContext(c)
-			logger.Error(err)
-		}
-		c.Locals("userID", 0)
-	} else {
-		c.Locals("userID", id)
-	}
+func dontCache(c fiber.Ctx) error {
+	c.Set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
+	c.Set("Pragma", "no-cache")
+	c.Set("Expires", "0")
 
 	return c.Next()
 }
@@ -299,15 +290,18 @@ func logout(c fiber.Ctx) error {
 	return nil
 }
 
-func getName(c fiber.Ctx) error {
-	id := c.Locals("userID").(int)
+func getUser(c fiber.Ctx) error {
+	session := c.Cookies(config.Cookies.Session)
 
-	name, err := db.GetUserName(c, id)
+	user, err := db.GetUser(c, session)
 	if err != nil {
-		return err
+		if !errors.Is(err, db.ErrInvalidSession) {
+			logger := log.WithContext(c)
+			logger.Error(err)
+		}
 	}
 
-	return c.JSON(fiber.Map{"name": name})
+	return c.JSON(fiber.Map{"user": user})
 }
 
 func setSessionCookie(c fiber.Ctx, session string) {

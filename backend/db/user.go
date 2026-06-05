@@ -4,45 +4,49 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/gofiber/fiber/v3/log"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/argon2"
 	"modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
 )
 
 type User struct {
-	ID    int
-	Email string
-	Name  string
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
 }
 
 // CreateUser creates a user, returning the user's ID
-func CreateUser(ctx context.Context, email string, password string, name string) (int, error) {
+func CreateUser(ctx context.Context, email string, password string, name string) (*uuid.UUID, error) {
 	hashedPassword := hashPassword(password)
+	id, err := uuid.NewV7()
+	if err != nil {
+		return nil, err
+	}
 
 	tx, err := DB.BeginTx(ctx, nil)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	defer tx.Rollback()
 
-	res := tx.QueryRowContext(
+	_, err = tx.ExecContext(
 		ctx, `
-		INSERT INTO users (email, name) VALUES (?, ?) RETURNING id
-	`, email, name,
+		INSERT INTO users (id, email, name) VALUES (?, ?)
+		`, id[:], email, name,
 	)
-
-	var id int
-	if err := res.Scan(&id); err != nil {
+	if err != nil {
 		if sqlErr, ok := errors.AsType[*sqlite.Error](err); ok {
 			if sqlErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
-				return 0, ErrEmailAlreadyExists
+				return nil, ErrEmailAlreadyExists
 			}
 		}
-		return 0, err
+		return nil, err
 	}
 
 	_, err = tx.ExecContext(
@@ -51,14 +55,14 @@ func CreateUser(ctx context.Context, email string, password string, name string)
 	`, id, hashedPassword.hash, hashedPassword.salt,
 	)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	if err := tx.Commit(); err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return id, nil
+	return &id, nil
 }
 
 func DeleteUser(ctx context.Context, email string) error {
@@ -70,27 +74,30 @@ func DeleteUser(ctx context.Context, email string) error {
 	return err
 }
 
-func CreateUserFromOAuth(ctx context.Context, provider string, providerID string, name string, email string) (int, error) {
+func CreateUserFromOAuth(ctx context.Context, provider string, providerID string, name string, email string) (uuid.UUID, error) {
 	tx, err := DB.BeginTx(ctx, nil)
 	if err != nil {
-		return 0, err
+		return uuid.Nil, err
 	}
 	defer tx.Rollback()
 
-	res := tx.QueryRowContext(
-		ctx, `
-		INSERT INTO users (email, name) VALUES (?, ?) RETURNING id
-	`, email, name,
-	)
+	id, err := uuid.NewV7()
+	if err != nil {
+		return id, err
+	}
 
-	var id int
-	if err := res.Scan(&id); err != nil {
+	_, err = tx.ExecContext(
+		ctx, `
+		INSERT INTO users (id, email, name) VALUES (?, ?) RETURNING id
+		`, id[:], email, name,
+	)
+	if err != nil {
 		if sqlErr, ok := errors.AsType[*sqlite.Error](err); ok {
 			if sqlErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
-				return 0, ErrEmailAlreadyExists
+				return id, ErrEmailAlreadyExists
 			}
 		}
-		return 0, err
+		return id, err
 	}
 
 	_, err = tx.ExecContext(
@@ -99,65 +106,44 @@ func CreateUserFromOAuth(ctx context.Context, provider string, providerID string
 	`, provider, providerID, id,
 	)
 	if err != nil {
-		return 0, err
+		return id, err
 	}
 
 	if err := tx.Commit(); err != nil {
-		return 0, err
+		return id, err
 	}
 
 	return id, nil
 }
 
-func HandleOAuthResult(ctx context.Context, provider string, providerID string, name string, email string) (int, error) {
-	var existingID int
+func HandleOAuthResult(ctx context.Context, provider string, providerID string, name string, email string) (uuid.UUID, error) {
+	var userID uuid.UUID
 	log.Info(provider, " - ", providerID)
-	err := DB.QueryRowContext(ctx, "SELECT user_id FROM user_oauth WHERE provider = ? AND provider_id = ?", provider, providerID).Scan(&existingID)
+	err := DB.QueryRowContext(ctx, "SELECT user_id FROM user_oauth WHERE provider = ? AND provider_id = ?", provider, providerID).Scan(&userID)
 
 	if err == nil {
-		return existingID, nil
+		return userID, nil
 	} else if !errors.Is(err, sql.ErrNoRows) {
-		return 0, err
+		return uuid.Nil, err
 	}
 
 	log.Info("Um...")
 
-	var emailUserID int
-	err = DB.QueryRowContext(ctx, "SELECT id FROM users WHERE email = ?", email).Scan(&emailUserID)
+	err = DB.QueryRowContext(ctx, "SELECT id FROM users WHERE email = ?", email).Scan(&userID)
 
 	if err == nil {
 		_, err := DB.ExecContext(
 			ctx,
 			`INSERT INTO user_oauth (provider, provider_id, user_id) VALUES (?, ?, ?)`,
-			provider, providerID, emailUserID,
+			provider, providerID, userID[:],
 		)
 
-		return emailUserID, err
+		return userID, err
 	} else if !errors.Is(err, sql.ErrNoRows) {
-		return 0, err
+		return uuid.Nil, err
 	}
 
 	return CreateUserFromOAuth(ctx, provider, providerID, name, email)
-}
-
-func GetUser(ctx context.Context, id int) (*User, error) {
-	query := `
-	SELECT email, name FROM users WHERE id = ?
-	`
-
-	res := DB.QueryRowContext(ctx, query, id)
-
-	user := User{ID: id}
-	err := res.Scan(&user.Email, &user.Name)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-
-		return nil, err
-	}
-
-	return &user, nil
 }
 
 var (
@@ -167,7 +153,7 @@ var (
 )
 
 type UserResult struct {
-	ID       int
+	ID       uuid.UUID
 	Verified bool
 }
 
@@ -202,8 +188,9 @@ func ValidateUser(ctx context.Context, email string, password string) (UserResul
 func GetUserStatusByEmail(ctx context.Context, email string) (UserResult, error) {
 	query := `SELECT id, verified FROM users WHERE email = ?`
 
+	var id uuid.UUID
 	var result UserResult
-	err := DB.QueryRowContext(ctx, query, email).Scan(&result.ID, &result.Verified)
+	err := DB.QueryRowContext(ctx, query, email).Scan(&id, &result.Verified)
 	if err != nil {
 		return result, err
 	}
@@ -211,24 +198,22 @@ func GetUserStatusByEmail(ctx context.Context, email string) (UserResult, error)
 	return result, nil
 }
 
-func GetUserName(ctx context.Context, id int) (*string, error) {
-	log.Info(id)
-	query := "SELECT name FROM users WHERE id = ?"
+func GetUser(ctx context.Context, session string) (*User, error) {
+	query := "SELECT users.id, users.name FROM sessions LEFT JOIN users ON sessions.user_id = users.id WHERE session.id = ? AND expiry >= ?"
+	now := time.Now().Unix()
+	sessionHash := sha256.Sum256([]byte(session))
 
-	var name *string
-	row := DB.QueryRowContext(ctx, query, id)
-	if err := row.Scan(&name); err != nil {
+	var user User
+	row := DB.QueryRowContext(ctx, query, sessionHash[:], now)
+	if err := row.Scan(&user.ID, &user.Name); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			log.Info("No rows found")
-			return nil, nil
+			return nil, ErrInvalidSession
 		}
 
 		return nil, err
 	}
 
-	log.Info("Name found: %s", name)
-
-	return name, nil
+	return &user, nil
 }
 
 type HashedPassword struct {

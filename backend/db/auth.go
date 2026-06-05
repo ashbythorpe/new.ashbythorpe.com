@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"ashbythorpe.com/website/config"
+	"github.com/google/uuid"
 )
 
 var (
@@ -20,14 +21,14 @@ var (
 	ErrExistingToken  = errors.New("too recent existing token")
 )
 
-func CreateSession(ctx context.Context, userID int) (string, error) {
+func CreateSession(ctx context.Context, userID uuid.UUID) (string, error) {
 	session := rand.Text()
 	expiry := time.Now().Add(time.Hour * 24 * 7).Unix()
 	sessionHash := sha256.Sum256([]byte(session))
 
 	query := `INSERT INTO sessions (id, user_id, expiry) VALUES (?, ?, ?)`
 
-	_, err := DB.ExecContext(ctx, query, sessionHash[:], userID, expiry)
+	_, err := DB.ExecContext(ctx, query, sessionHash[:], userID[:], expiry)
 	if err != nil {
 		return "", err
 	}
@@ -35,21 +36,21 @@ func CreateSession(ctx context.Context, userID int) (string, error) {
 	return session, nil
 }
 
-func VerifySession(ctx context.Context, session string) (int, error) {
+func VerifySession(ctx context.Context, session string) (uuid.UUID, error) {
 	query := `SELECT user_id FROM sessions WHERE id = ? AND expiry >= ?`
 	now := time.Now().Unix()
 	sessionHash := sha256.Sum256([]byte(session))
 
 	row := DB.QueryRowContext(ctx, query, sessionHash[:], now)
 
-	var id int
+	var id uuid.UUID
 	err := row.Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return 0, ErrInvalidSession
+			return uuid.Nil, ErrInvalidSession
 		}
 
-		return 0, err
+		return uuid.Nil, err
 	}
 
 	return id, nil
@@ -63,12 +64,12 @@ func DeleteSession(ctx context.Context, session string) error {
 	return err
 }
 
-func CreateVerificationToken(ctx context.Context, userID int) (string, error) {
+func CreateVerificationToken(ctx context.Context, userID uuid.UUID) (string, error) {
 	existingTokensQuery := `
 	SELECT COUNT(*) FROM verification_tokens WHERE user_id = ? AND created_at >= datetime('now', '-1 minute')
 	`
 
-	row := DB.QueryRowContext(ctx, existingTokensQuery, userID)
+	row := DB.QueryRowContext(ctx, existingTokensQuery, userID[:])
 	var existingTokens int
 	if err := row.Scan(&existingTokens); err != nil {
 		return "", err
@@ -79,7 +80,7 @@ func CreateVerificationToken(ctx context.Context, userID int) (string, error) {
 	}
 
 	deleteQuery := "DELETE FROM verification_tokens WHERE user_id = ?"
-	if _, err := DB.ExecContext(ctx, deleteQuery, userID); err != nil {
+	if _, err := DB.ExecContext(ctx, deleteQuery, userID[:]); err != nil {
 		return "", err
 	}
 
@@ -93,7 +94,7 @@ func CreateVerificationToken(ctx context.Context, userID int) (string, error) {
 	INSERT INTO verification_tokens (token, user_id, expiry) VALUES (?, ?, ?)
 	`
 
-	if _, err := DB.ExecContext(ctx, query, HashOTP(token), userID, expiry); err != nil {
+	if _, err := DB.ExecContext(ctx, query, HashOTP(token), userID[:], expiry); err != nil {
 		return "", err
 	}
 
@@ -125,8 +126,8 @@ func CheckVerificationToken(ctx context.Context, token string) error {
 		now,
 	)
 
-	var userID int
-	if err := row.Scan(&userID); err != nil {
+	var id uuid.UUID
+	if err := row.Scan(&id); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrInvalidToken
 		}
@@ -138,7 +139,7 @@ func CheckVerificationToken(ctx context.Context, token string) error {
 		return err
 	}
 
-	_, err = tx.ExecContext(ctx, "UPDATE users SET verified = TRUE WHERE id = ?", userID)
+	_, err = tx.ExecContext(ctx, "UPDATE users SET verified = TRUE WHERE id = ?", id[:])
 	if err != nil {
 		return err
 	}
@@ -146,12 +147,12 @@ func CheckVerificationToken(ctx context.Context, token string) error {
 	return tx.Commit()
 }
 
-func CreatePasswordResetToken(ctx context.Context, userID int) (string, error) {
+func CreatePasswordResetToken(ctx context.Context, userID uuid.UUID) (string, error) {
 	existingTokensQuery := `
 	SELECT COUNT(*) FROM password_reset_tokens WHERE user_id = ? AND created_at >= datetime('now', '-1 minute')
 	`
 
-	row := DB.QueryRowContext(ctx, existingTokensQuery, userID)
+	row := DB.QueryRowContext(ctx, existingTokensQuery, userID[:])
 	var existingTokens int
 	if err := row.Scan(&existingTokens); err != nil {
 		return "", err
@@ -162,7 +163,7 @@ func CreatePasswordResetToken(ctx context.Context, userID int) (string, error) {
 	}
 
 	deleteQuery := "DELETE FROM password_reset_tokens WHERE user_id = ?"
-	if _, err := DB.ExecContext(ctx, deleteQuery, userID); err != nil {
+	if _, err := DB.ExecContext(ctx, deleteQuery, userID[:]); err != nil {
 		return "", err
 	}
 
@@ -174,7 +175,7 @@ func CreatePasswordResetToken(ctx context.Context, userID int) (string, error) {
 	`
 	tokenHash := sha256.Sum256([]byte(token))
 
-	if _, err := DB.ExecContext(ctx, query, tokenHash[:], userID, expiry); err != nil {
+	if _, err := DB.ExecContext(ctx, query, tokenHash[:], userID[:], expiry); err != nil {
 		return "", err
 	}
 
@@ -192,8 +193,8 @@ func ChangePassword(ctx context.Context, token string, newPassword string) error
 
 	tokenHash := sha256.Sum256([]byte(token))
 
-	var userID int
-	err = tx.QueryRowContext(ctx, "SELECT user_id FROM password_reset_tokens WHERE token = ? AND expiry >= ?", tokenHash[:], now).Scan(&userID)
+	var id uuid.UUID
+	err = tx.QueryRowContext(ctx, "SELECT user_id FROM password_reset_tokens WHERE token = ? AND expiry >= ?", tokenHash[:], now).Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrInvalidToken
@@ -208,7 +209,7 @@ func ChangePassword(ctx context.Context, token string, newPassword string) error
 		UPDATE user_password
 		SET password = ?, salt = ?
 		WHERE user_id = ?
-		`, hashedPassword.hash, hashedPassword.salt, userID,
+		`, hashedPassword.hash, hashedPassword.salt, id[:],
 	)
 	if err != nil {
 		return err
@@ -219,7 +220,7 @@ func ChangePassword(ctx context.Context, token string, newPassword string) error
 		UPDATE users
 		SET verified = TRUE
 		WHERE id = ?
-		`, userID,
+		`, id[:],
 	)
 	if err != nil {
 		return err
@@ -230,12 +231,12 @@ func ChangePassword(ctx context.Context, token string, newPassword string) error
 		return err
 	}
 
-	_, err = tx.ExecContext(ctx, "DELETE FROM verification_tokens WHERE user_id = ?", userID)
+	_, err = tx.ExecContext(ctx, "DELETE FROM verification_tokens WHERE user_id = ?", id[:])
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.ExecContext(ctx, "DELETE FROM sessions WHERE user_id = ?", userID)
+	_, err = tx.ExecContext(ctx, "DELETE FROM sessions WHERE user_id = ?", id[:])
 	if err != nil {
 		return err
 	}
