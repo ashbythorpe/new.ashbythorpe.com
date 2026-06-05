@@ -208,7 +208,7 @@ export default class AuthForm extends Component {
         // const signupContainer = this.querySelector("#signup-turnstile-container");
 
         turnstile.render("#log-in-turnstile", {
-            sitekey: "1x00000000000000000000AA",
+            sitekey: import.meta.env.TURNSTILE_SITE_KEY,
             theme: "auto",
             size: "flexible",
             callback: (token) => {
@@ -218,7 +218,7 @@ export default class AuthForm extends Component {
 
         // 0x4AAAAAABuPwLoKiglpi_Nz
         turnstile.render("#sign-up-turnstile", {
-            sitekey: "1x00000000000000000000AA",
+            sitekey: import.meta.env.TURNSTILE_SITE_KEY,
             theme: "auto",
             size: "flexible",
             callback: (token) => {
