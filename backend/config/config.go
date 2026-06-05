@@ -7,7 +7,7 @@ import (
 var (
 	ResendAPIKey       string
 	DBPath             string
-	Origin               string
+	Origin             string
 	GitHubClientID     string
 	GitHubClientSecret string
 	Pepper             string
@@ -20,6 +20,7 @@ type CookieNames struct {
 	Session       string
 	OAuthState    string
 	OAuthVerifier string
+	Redirect      string
 }
 
 func Init() error {
@@ -28,9 +29,9 @@ func Init() error {
 	if DBPath == "" {
 		DBPath = "data/app.db"
 	}
-	Origin = os.Getenv("HOST")
+	Origin = os.Getenv("ORIGIN")
 	if Origin == "" {
-		Origin = "http://localhost:5176"
+		Origin = "http://localhost:5173"
 	}
 	GitHubClientID = os.Getenv("GITHUB_CLIENT_ID")
 	GitHubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
@@ -42,10 +43,12 @@ func Init() error {
 		Cookies.Session = "session"
 		Cookies.OAuthState = "oauth-state"
 		Cookies.OAuthVerifier = "oauth-verifier"
+		Cookies.Redirect = "redirect"
 	} else {
 		Cookies.Session = "__Host-Http-session"
 		Cookies.OAuthState = "__Host-Http-oauth-state"
 		Cookies.OAuthVerifier = "__Host-Http-oauth-verifier"
+		Cookies.Redirect = "__Host-Http-redirect"
 	}
 
 	return nil

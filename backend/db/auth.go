@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"ashbythorpe.com/website/config"
-	"github.com/gofiber/fiber/v3/log"
-	"github.com/google/uuid"
 )
 
 var (
@@ -27,7 +25,7 @@ func CreateSession(ctx context.Context, userID int) (string, error) {
 	expiry := time.Now().Add(time.Hour * 24 * 7).Unix()
 	sessionHash := sha256.Sum256([]byte(session))
 
-	query := `INSERT INTO sessions (id, userID, expiry) VALUES (?, ?, ?)`
+	query := `INSERT INTO sessions (id, user_id, expiry) VALUES (?, ?, ?)`
 
 	_, err := DB.ExecContext(ctx, query, sessionHash[:], userID, expiry)
 	if err != nil {
@@ -38,7 +36,7 @@ func CreateSession(ctx context.Context, userID int) (string, error) {
 }
 
 func VerifySession(ctx context.Context, session string) (int, error) {
-	query := `SELECT userID FROM sessions WHERE id = ? AND expiry >= ?`
+	query := `SELECT user_id FROM sessions WHERE id = ? AND expiry >= ?`
 	now := time.Now().Unix()
 	sessionHash := sha256.Sum256([]byte(session))
 
@@ -67,7 +65,7 @@ func DeleteSession(ctx context.Context, session string) error {
 
 func CreateVerificationToken(ctx context.Context, userID int) (string, error) {
 	existingTokensQuery := `
-	SELECT COUNT(*) FROM verification_tokens WHERE userID = ? AND created_at >= datetime('now', '-1 minute')
+	SELECT COUNT(*) FROM verification_tokens WHERE user_id = ? AND created_at >= datetime('now', '-1 minute')
 	`
 
 	row := DB.QueryRowContext(ctx, existingTokensQuery, userID)
@@ -80,7 +78,7 @@ func CreateVerificationToken(ctx context.Context, userID int) (string, error) {
 		return "", ErrExistingToken
 	}
 
-	deleteQuery := "DELETE FROM verification_tokens WHERE userID = ?"
+	deleteQuery := "DELETE FROM verification_tokens WHERE user_id = ?"
 	if _, err := DB.ExecContext(ctx, deleteQuery, userID); err != nil {
 		return "", err
 	}
@@ -92,7 +90,7 @@ func CreateVerificationToken(ctx context.Context, userID int) (string, error) {
 	}
 
 	query := `
-	INSERT INTO verification_tokens (token, userID, expiry) VALUES (?, ?, ?)
+	INSERT INTO verification_tokens (token, user_id, expiry) VALUES (?, ?, ?)
 	`
 
 	if _, err := DB.ExecContext(ctx, query, HashOTP(token), userID, expiry); err != nil {
@@ -122,7 +120,7 @@ func CheckVerificationToken(ctx context.Context, token string) error {
 
 	row := tx.QueryRowContext(
 		ctx,
-		"SELECT userID FROM verification_tokens WHERE token = ? AND expiry >= ?",
+		"SELECT user_id FROM verification_tokens WHERE token = ? AND expiry >= ?",
 		tokenHash,
 		now,
 	)
@@ -140,7 +138,7 @@ func CheckVerificationToken(ctx context.Context, token string) error {
 		return err
 	}
 
-	_, err = tx.ExecContext(ctx, "UPDATE users SET verified = TRUE WHERE id = ?")
+	_, err = tx.ExecContext(ctx, "UPDATE users SET verified = TRUE WHERE id = ?", userID)
 	if err != nil {
 		return err
 	}
@@ -149,11 +147,8 @@ func CheckVerificationToken(ctx context.Context, token string) error {
 }
 
 func CreatePasswordResetToken(ctx context.Context, userID int) (string, error) {
-	token := uuid.NewString()
-	expiry := time.Now().Add(time.Hour * 24).Unix()
-
 	existingTokensQuery := `
-	SELECT COUNT(*) FROM password_reset_tokens WHERE userID = ? AND created_at >= datetime('now', '-1 minute')
+	SELECT COUNT(*) FROM password_reset_tokens WHERE user_id = ? AND created_at >= datetime('now', '-1 minute')
 	`
 
 	row := DB.QueryRowContext(ctx, existingTokensQuery, userID)
@@ -166,13 +161,16 @@ func CreatePasswordResetToken(ctx context.Context, userID int) (string, error) {
 		return "", ErrExistingToken
 	}
 
-	deleteQuery := "DELETE FROM password_reset_tokens WHERE userID = ?"
+	deleteQuery := "DELETE FROM password_reset_tokens WHERE user_id = ?"
 	if _, err := DB.ExecContext(ctx, deleteQuery, userID); err != nil {
 		return "", err
 	}
 
+	token := rand.Text()
+	expiry := time.Now().Add(time.Hour * 24).Unix()
+
 	query := `
-	INSERT INTO password_reset_tokens (token, userID, expiry) VALUES (?, ?, ?)
+	INSERT INTO password_reset_tokens (token, user_id, expiry) VALUES (?, ?, ?)
 	`
 	tokenHash := sha256.Sum256([]byte(token))
 
@@ -186,58 +184,67 @@ func CreatePasswordResetToken(ctx context.Context, userID int) (string, error) {
 func ChangePassword(ctx context.Context, token string, newPassword string) error {
 	now := time.Now().Unix()
 
+	tx, err := DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
 	tokenHash := sha256.Sum256([]byte(token))
 
 	var userID int
-	err := DB.QueryRowContext(ctx, "SELECT userID FROM password_reset_tokens WHERE token = ? AND expiry >= ?", tokenHash[:], now).Scan(&userID)
+	err = tx.QueryRowContext(ctx, "SELECT user_id FROM password_reset_tokens WHERE token = ? AND expiry >= ?", tokenHash[:], now).Scan(&userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return errors.New("invalid or expired token")
+			return ErrInvalidToken
 		}
 		return err
 	}
 
 	hashedPassword := hashPassword(newPassword)
 
-	updateQuery := `
-		UPDATE users 
-		SET password = ?, salt = ?, verified = TRUE 
-		WHERE id = ?
-	`
-	_, err = DB.ExecContext(ctx, updateQuery, hashedPassword.hash, hashedPassword.salt, userID)
+	_, err = tx.ExecContext(
+		ctx, `
+		UPDATE user_password
+		SET password = ?, salt = ?
+		WHERE user_id = ?
+		`, hashedPassword.hash, hashedPassword.salt, userID,
+	)
 	if err != nil {
 		return err
 	}
 
-	DB.ExecContext(ctx, "DELETE FROM password_reset_tokens WHERE token = ?", tokenHash[:])
-	DB.ExecContext(ctx, "DELETE FROM verification_tokens WHERE userID = ?", userID)
-	DB.ExecContext(ctx, "DELETE FROM sessions WHERE userID = ?", userID)
+	_, err = DB.ExecContext(
+		ctx, `
+		UPDATE users
+		SET verified = TRUE
+		WHERE id = ?
+		`, userID,
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM password_reset_tokens WHERE token = ?", tokenHash[:])
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM verification_tokens WHERE user_id = ?", userID)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM sessions WHERE user_id = ?", userID)
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
 
 	return nil
-}
-
-func HandleGithubDatabaseIntegration(ctx context.Context, githubID, name, email string) (int, error) {
-	var existingID int
-	err := DB.QueryRowContext(ctx, "SELECT id FROM users WHERE github_id = ?", githubID).Scan(&existingID)
-
-	if err == nil {
-		return existingID, nil
-	} else if !errors.Is(err, sql.ErrNoRows) {
-		return 0, err
-	}
-
-	var emailUserID int
-	err = DB.QueryRowContext(ctx, "SELECT id FROM users WHERE email = ?", email).Scan(&emailUserID)
-
-	if err == nil {
-		linkQuery := `UPDATE users SET github_id = ?, verified = TRUE WHERE id = ?`
-		_, err = DB.ExecContext(ctx, linkQuery, githubID, emailUserID)
-		return emailUserID, err
-	} else if !errors.Is(err, sql.ErrNoRows) {
-		return 0, err
-	}
-
-	return CreateUserFromGithub(ctx, githubID, name, email)
 }
 
 func generateOTP() (string, error) {

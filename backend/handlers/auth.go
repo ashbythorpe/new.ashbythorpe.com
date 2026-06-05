@@ -206,19 +206,13 @@ func sendVerification(c fiber.Ctx) error {
 	token, err := db.CreateVerificationToken(context.WithoutCancel(c.Context()), result.ID)
 	if err != nil {
 		if errors.Is(err, db.ErrExistingToken) {
-			return &utils.AppError{
-				Status:  fiber.StatusBadRequest,
-				Message: "Existing token",
-				Type:    "existing-token",
-			}
+			return nil
 		}
 
 		return err
 	}
 
-	if err := utils.SendMagicLinkEmail(token, data.Email); err != nil {
-		return err
-	}
+	go utils.SendMagicLinkEmail(token, data.Email)
 
 	return nil
 }
@@ -246,9 +240,7 @@ func requestPasswordReset(c fiber.Ctx) error {
 		return err
 	}
 
-	if err := utils.SendPasswordResetEmail(token, req.Email); err != nil {
-		return err
-	}
+	go utils.SendPasswordResetEmail(token, req.Email)
 
 	return nil
 }
@@ -283,13 +275,16 @@ func verifyAccount(c fiber.Ctx) error {
 	err := db.CheckVerificationToken(c, token)
 	if err != nil {
 		if errors.Is(err, db.ErrInvalidToken) {
-			return c.Redirect().To("/sign-up.html?invalid-token=true")
+			return &utils.AppError{
+				Status: fiber.StatusUnauthorized,
+				Message: "Token invalid or expired",
+			}
 		}
 
 		return err
 	}
 
-	return c.Redirect().To("/login.html?account_created=true")
+	return nil
 }
 
 func logout(c fiber.Ctx) error {

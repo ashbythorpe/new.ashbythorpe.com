@@ -3,6 +3,7 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/log"
 	"github.com/gofiber/fiber/v3/middleware/helmet"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/logger"
@@ -20,13 +21,10 @@ func Setup(app *fiber.App) {
 
 	app.Use(requestid.New())
 
+	log.MustSetContextTemplate(log.ContextConfig{Format: log.RequestIDFormat})
+
 	app.Use(logger.New(logger.Config{
-		CustomTags: map[string]logger.LogFunc{
-			"requestID": func(output logger.Buffer, c fiber.Ctx, data *logger.Data, _ string) (int, error) {
-				return output.WriteString(requestid.FromContext(c))
-			},
-		},
-		Format:   "[${time}] [ID: ${requestID}] ${ip} ${status} - ${latency} ${method} ${path}\n",
+		Format:   "[${time}] [ID: ${requestid}] [Cf-Ray: ${reqHeader:Cf-Ray}] ${ip} ${status} - ${latency} ${method} ${path} ${error}\n",
 		TimeZone: "UTC",
 	}))
 

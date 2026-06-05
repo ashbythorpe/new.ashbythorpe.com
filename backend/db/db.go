@@ -6,9 +6,9 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"log"
 
 	"ashbythorpe.com/website/config"
+	"github.com/gofiber/fiber/v3/log"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
@@ -48,12 +48,12 @@ func Init(migrations embed.FS) error {
 
 	if err := m.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
-			log.Println("Database is up to date, no migrations to apply.")
+			log.Infof("Database is up to date, no migrations to apply.")
 		} else {
 			return err
 		}
 	} else {
-		log.Println("Database migrations applied successfully.")
+		log.Infof("Database migrations applied successfully.")
 	}
 
 	return nil

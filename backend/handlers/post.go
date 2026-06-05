@@ -6,7 +6,6 @@ import (
 
 	"ashbythorpe.com/website/db"
 	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/fiber/v3/log"
 )
 
 func SetupCommentRoutes(app *fiber.App) {
@@ -15,7 +14,7 @@ func SetupCommentRoutes(app *fiber.App) {
 	group.Get("/:post/replies/:id", userIDmiddleware, getReplies)
 	group.Post("/:post/create-comment", authMiddleware, createComment)
 	group.Post("/:post/edit-comment/:id", authMiddleware, editComment)
-	group.Post("/:post/delete-comment/:id", authMiddleware, deleteComment)
+	group.Delete("/:post/comment/:id", authMiddleware, deleteComment)
 }
 
 type CommentsResult struct {
@@ -30,8 +29,6 @@ func getComments(c fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
-	log.WithContext(c).Infof("Page = %v", page)
 
 	if page <= 0 {
 		return errors.New("invalid page")

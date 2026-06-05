@@ -40,9 +40,9 @@ func CountComments(ctx context.Context, postName string) (int, error) {
 
 func GetComments(ctx context.Context, postName string, userID int, page int) ([]OriginalComment, error) {
 	query := `
-	SELECT comments.id, users.name AS author, comments.content, strftime('%Y-%m-%dT%H:%M:%SZ', comments.created_at) as created_at, comments.userID = ? as owned, COUNT(replies.id) AS replies
+	SELECT comments.id, users.name AS author, comments.content, strftime('%Y-%m-%dT%H:%M:%SZ', comments.created_at) as created_at, comments.user_id = ? as owned, COUNT(replies.id) AS replies
 	FROM comments
-	LEFT JOIN users ON comments.userID = users.id
+	LEFT JOIN users ON comments.user_id = users.id
 	LEFT JOIN comments AS replies ON comments.id = replies.original_reply_to
 	WHERE comments.post_name = ? AND comments.original_reply_to IS NULL
 	GROUP BY comments.id
@@ -74,11 +74,11 @@ func GetComments(ctx context.Context, postName string, userID int, page int) ([]
 
 func GetReplies(ctx context.Context, postName string, id int, userID int) ([]Reply, error) {
 	query := `
-	SELECT comments.id, users.name, comments.content, strftime('%Y-%m-%dT%H:%M:%SZ', comments.created_at) as created_at, comments.userID = ? as owned, comments.reply_to, reply_users.name, comments.original_reply_to
+	SELECT comments.id, users.name, comments.content, strftime('%Y-%m-%dT%H:%M:%SZ', comments.created_at) as created_at, comments.user_id = ? as owned, comments.reply_to, reply_users.name, comments.original_reply_to
 	FROM comments
-	LEFT JOIN users ON comments.userID = users.id
+	LEFT JOIN users ON comments.user_id = users.id
 	LEFT JOIN comments AS original_comments ON comments.reply_to = original_comments.id
-	LEFT JOIN users AS reply_users ON original_comments.userID = reply_users.id
+	LEFT JOIN users AS reply_users ON original_comments.user_id = reply_users.id
 	WHERE comments.post_name = ? AND comments.original_reply_to = ?
 	ORDER BY comments.created_at DESC
 	`
@@ -135,7 +135,7 @@ func CreateComment(ctx context.Context, postName string, userID int, content str
 	}
 
 	query := `
-		INSERT INTO comments (post_name, userID, content, reply_to, original_reply_to) VALUES (?, ?, ?, ?, ?) RETURNING id
+		INSERT INTO comments (post_name, user_id, content, reply_to, original_reply_to) VALUES (?, ?, ?, ?, ?) RETURNING id
 	`
 
 	var id int
@@ -149,7 +149,7 @@ func EditComment(ctx context.Context, id int, userID int, content string) error 
 	query := `
 		UPDATE comments
 		SET content = ?
-		WHERE id = ? AND userID = ?
+		WHERE id = ? AND user_id = ?
 	`
 
 	res, err := DB.ExecContext(ctx, query, content, id, userID)
@@ -170,7 +170,7 @@ func EditComment(ctx context.Context, id int, userID int, content string) error 
 }
 
 func DeleteComment(ctx context.Context, id int, userID int) error {
-	query := "DELETE FROM comments WHERE id = ? AND userID = ?"
+	query := "DELETE FROM comments WHERE id = ? AND user_id = ?"
 
 	res, err := DB.ExecContext(ctx, query, id, userID)
 	if err != nil {

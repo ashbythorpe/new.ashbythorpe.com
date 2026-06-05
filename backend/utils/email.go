@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"ashbythorpe.com/website/config"
+	"github.com/gofiber/fiber/v3/log"
 	"github.com/resend/resend-go/v2"
 )
 
@@ -13,8 +16,11 @@ func SetupResend() {
 	resendClient = resend.NewClient(config.ResendAPIKey)
 }
 
-func SendMagicLinkEmail(code string, email string) error {
-	magicLink := fmt.Sprintf("https://new.ashbythorpe.com/verify?code=%s", code)
+func SendMagicLinkEmail(code string, email string) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 10)
+	defer cancel()
+
+	magicLink := fmt.Sprintf("https://new.ashbythorpe.com/verify/?code=%s", code)
 
 	htmlBody := fmt.Sprintf(`
 	<div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
@@ -32,36 +38,42 @@ func SendMagicLinkEmail(code string, email string) error {
 	</div>
 `, code, magicLink)
 
+	from := "AshbyThorpe <info@website.ashbythorpe.com>"
+	if config.DevMode {
+		from = "onboarding@resend.dev"
+	}
+
 	params := &resend.SendEmailRequest{
-		From:    "AshbyThorpe <info@website.ashbythorpe.com>",
+		From:    from,
 		To:      []string{email},
 		Subject: "Verify your account for ashbythorpe.com",
 		Html:    htmlBody,
 	}
 
-	_, err := resendClient.Emails.Send(params)
-	if err != nil {
-		return err
-	}
+	_, err := resendClient.Emails.SendWithContext(ctx, params)
 
-	return nil
+	if err != nil {
+		log.Error(err)
+	}
 }
 
-func SendPasswordResetEmail(token string, email string) error {
+func SendPasswordResetEmail(token string, email string) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 10)
+	defer cancel()
+
 	params := &resend.SendEmailRequest{
 		From:    "AshbyThorpe <info@website.ashbythorpe.com>",
 		To:      []string{email},
 		Subject: "Reset your password",
 		Text: fmt.Sprintf(`Reset your password for ashbythorpe.com:
-ashbythorpe.com/auth/reset-password/%s
+ashbythorpe.com/auth/reset-password/?token=%s
 
 `, token),
 	}
 
-	_, err := resendClient.Emails.Send(params)
-	if err != nil {
-		return err
-	}
+	_, err := resendClient.Emails.SendWithContext(ctx, params)
 
-	return nil
+	if err != nil {
+		log.Error(err)
+	}
 }

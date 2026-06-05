@@ -14,29 +14,47 @@ import (
 )
 
 type User struct {
-	ID       int
-	Email    string
-	GithubID *string
-	Name     string
+	ID    int
+	Email string
+	Name  string
 }
 
 // CreateUser creates a user, returning the user's ID
 func CreateUser(ctx context.Context, email string, password string, name string) (int, error) {
 	hashedPassword := hashPassword(password)
 
-	query := `
-	INSERT INTO users (email, password, salt, name) VALUES (?, ?, ?, ?) RETURNING id
-	`
-	res := DB.QueryRowContext(ctx, query, email, hashedPassword.hash, hashedPassword.salt, name)
+	tx, err := DB.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	res := tx.QueryRowContext(
+		ctx, `
+		INSERT INTO users (email, name) VALUES (?, ?) RETURNING id
+	`, email, name,
+	)
 
 	var id int
-	err := res.Scan(&id)
-	if err != nil {
+	if err := res.Scan(&id); err != nil {
 		if sqlErr, ok := errors.AsType[*sqlite.Error](err); ok {
 			if sqlErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
 				return 0, ErrEmailAlreadyExists
 			}
 		}
+		return 0, err
+	}
+
+	_, err = tx.ExecContext(
+		ctx, `
+		INSERT INTO user_passwords (user_id, password, salt) VALUES (?, ?, ?)
+	`, id, hashedPassword.hash, hashedPassword.salt,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
 
@@ -52,33 +70,85 @@ func DeleteUser(ctx context.Context, email string) error {
 	return err
 }
 
-// CreateUserFromGithub creates a user that has been created using GitHub's
-// SSO, returning the user's ID
-func CreateUserFromGithub(ctx context.Context, githubID string, name string, email string) (int, error) {
-	query := `
-	INSERT INTO users (github_id, name, email, verified) VALUES (?, ?, ?, TRUE) RETURNING id
-	`
+func CreateUserFromOAuth(ctx context.Context, provider string, providerID string, name string, email string) (int, error) {
+	tx, err := DB.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
 
-	res := DB.QueryRowContext(ctx, query, githubID, name, email)
+	res := tx.QueryRowContext(
+		ctx, `
+		INSERT INTO users (email, name) VALUES (?, ?) RETURNING id
+	`, email, name,
+	)
 
 	var id int
-	err := res.Scan(&id)
+	if err := res.Scan(&id); err != nil {
+		if sqlErr, ok := errors.AsType[*sqlite.Error](err); ok {
+			if sqlErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+				return 0, ErrEmailAlreadyExists
+			}
+		}
+		return 0, err
+	}
+
+	_, err = tx.ExecContext(
+		ctx, `
+		INSERT INTO user_oauth (provider, provider_id, user_id) VALUES (?, ?, ?)
+	`, provider, providerID, id,
+	)
 	if err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
 
 	return id, nil
 }
 
+func HandleOAuthResult(ctx context.Context, provider string, providerID string, name string, email string) (int, error) {
+	var existingID int
+	log.Info(provider, " - ", providerID)
+	err := DB.QueryRowContext(ctx, "SELECT user_id FROM user_oauth WHERE provider = ? AND provider_id = ?", provider, providerID).Scan(&existingID)
+
+	if err == nil {
+		return existingID, nil
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return 0, err
+	}
+
+	log.Info("Um...")
+
+	var emailUserID int
+	err = DB.QueryRowContext(ctx, "SELECT id FROM users WHERE email = ?", email).Scan(&emailUserID)
+
+	if err == nil {
+		_, err := DB.ExecContext(
+			ctx,
+			`INSERT INTO user_oauth (provider, provider_id, user_id) VALUES (?, ?, ?)`,
+			provider, providerID, emailUserID,
+		)
+
+		return emailUserID, err
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return 0, err
+	}
+
+	return CreateUserFromOAuth(ctx, provider, providerID, name, email)
+}
+
 func GetUser(ctx context.Context, id int) (*User, error) {
 	query := `
-	SELECT email, github_id, name FROM users WHERE id = ?
+	SELECT email, name FROM users WHERE id = ?
 	`
 
 	res := DB.QueryRowContext(ctx, query, id)
 
 	user := User{ID: id}
-	err := res.Scan(&user.Email, &user.GithubID, &user.Name)
+	err := res.Scan(&user.Email, &user.Name)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -91,19 +161,22 @@ func GetUser(ctx context.Context, id int) (*User, error) {
 }
 
 var (
-	ErrInvalidEmail = errors.New("invalid email")
-	ErrInvalidPassword = errors.New("invalid password")
+	ErrInvalidEmail       = errors.New("invalid email")
+	ErrInvalidPassword    = errors.New("invalid password")
 	ErrEmailAlreadyExists = errors.New("email already exists")
 )
 
 type UserResult struct {
-	ID int
+	ID       int
 	Verified bool
 }
 
 func ValidateUser(ctx context.Context, email string, password string) (UserResult, error) {
 	query := `
-	SELECT id, password, salt, verified FROM users WHERE email = ? AND password IS NOT NULL
+	SELECT users.id, user_passwords.password, user_passwords.salt, users.verified
+	FROM users
+	RIGHT JOIN user_passwords ON users.id = user_passwords.user_id
+	WHERE users.email = ?
 	`
 
 	res := DB.QueryRowContext(ctx, query, email)
@@ -128,13 +201,13 @@ func ValidateUser(ctx context.Context, email string, password string) (UserResul
 
 func GetUserStatusByEmail(ctx context.Context, email string) (UserResult, error) {
 	query := `SELECT id, verified FROM users WHERE email = ?`
-	
+
 	var result UserResult
 	err := DB.QueryRowContext(ctx, query, email).Scan(&result.ID, &result.Verified)
 	if err != nil {
 		return result, err
 	}
-	
+
 	return result, nil
 }
 

@@ -1,14 +1,19 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"ashbythorpe.com/website/config"
@@ -19,9 +24,11 @@ import (
 )
 
 type GithubAccessTokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	Scope       string `json:"scope"`
+	AccessToken      string `json:"access_token"`
+	TokenType        string `json:"token_type"`
+	Scope            string `json:"scope"`
+	Error            string `json:"error"`
+	ErrorDescription string `json:"error_description"`
 }
 
 type GithubUser struct {
@@ -37,6 +44,18 @@ type GithubEmail struct {
 }
 
 func githubLogin(c fiber.Ctx) error {
+	redirect := c.Query("redirect", "/")
+
+	c.Cookie(&fiber.Cookie{
+		Name:     config.Cookies.Redirect,
+		Value:    redirect,
+		Path:     "/",
+		MaxAge:   60 * 10,
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Lax",
+	})
+
 	state := rand.Text()
 
 	verifier := generateCodeVerifier()
@@ -62,7 +81,7 @@ func githubLogin(c fiber.Ctx) error {
 		SameSite: "Lax",
 	})
 
-	redirectURI := fmt.Sprintf("%s/api/auth/github/callback", config.Host)
+	redirectURI := fmt.Sprintf("%s/api/auth/github/callback", config.Origin)
 
 	githubAuthURL := fmt.Sprintf(
 		"https://github.com/login/oauth/authorize?client_id=%s&redirect_uri=%s&state=%s&scope=user:email&code_challenge=%s&code_challenge_method=S256",
@@ -73,7 +92,43 @@ func githubLogin(c fiber.Ctx) error {
 }
 
 func githubCallback(c fiber.Ctx) error {
-	log.Info("We're inside!")
+	redirect := c.Cookies(config.Cookies.Redirect, "/")
+	c.ClearCookie(config.Cookies.Redirect)
+
+	if err := handleGithubCallback(c); err != nil {
+		log.Error(err)
+		var error string
+		if errors.Is(err, ErrBadVerification) {
+			error = "bad_verification"
+		} else if errors.Is(err, ErrUnverifiedEmail) {
+			error = "unverified_email"
+		} else if errors.Is(err, ErrGitHubServer) {
+			error = "github_server"
+		} else {
+			error = "internal"
+		}
+
+		return c.Redirect().To(fmt.Sprintf("/auth/sign-in/?redirect=%s&auth_error=%s", url.QueryEscape(redirect), error))
+	}
+
+	return c.Redirect().To(validateRedirect(redirect))
+}
+
+func validateRedirect(redirect string) string {
+	if redirect == "" || !strings.HasPrefix(redirect, "/") || strings.HasPrefix(redirect, "//") {
+		return "/"
+	}
+
+	return redirect
+}
+
+var (
+	ErrBadVerification = errors.New("invalid or expired verification code")
+	ErrUnverifiedEmail = errors.New("unverified primary email")
+	ErrGitHubServer    = errors.New("couldn't connect to GitHub")
+)
+
+func handleGithubCallback(c fiber.Ctx) error {
 	urlState := c.Query("state")
 	code := c.Query("code")
 
@@ -97,7 +152,7 @@ func githubCallback(c fiber.Ctx) error {
 		}
 	}
 
-	redirectURI := fmt.Sprintf("%s/api/auth/github/callback", config.Host)
+	redirectURI := fmt.Sprintf("%s/api/auth/github/callback", config.Origin)
 	netCtx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
@@ -120,9 +175,28 @@ func githubCallback(c fiber.Ctx) error {
 	}
 	defer resp.Body.Close()
 
+	bodyBytes, _ := io.ReadAll(resp.Body)
+
+	fmt.Printf("Request Body: %s\n", string(bodyBytes))
+
+	resp.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+
 	var tokenRes GithubAccessTokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tokenRes); err != nil {
 		return err
+	}
+
+	log.Infof("%#v", tokenRes)
+
+	if tokenRes.Error != "" {
+		switch tokenRes.Error {
+		case "bad_verification_code":
+			return ErrBadVerification
+		case "unverified_user_email":
+			return ErrUnverifiedEmail
+		default:
+			return fmt.Errorf("%s: %s", tokenRes.Error, tokenRes.ErrorDescription)
+		}
 	}
 
 	userReq, err := http.NewRequestWithContext(netCtx, "GET", "https://api.github.com/user", nil)
@@ -134,7 +208,8 @@ func githubCallback(c fiber.Ctx) error {
 
 	userResp, err := client.Do(userReq)
 	if err != nil {
-		return err
+		log.Error(err)
+		return ErrGitHubServer
 	}
 	defer userResp.Body.Close()
 
@@ -152,7 +227,8 @@ func githubCallback(c fiber.Ctx) error {
 
 	emailResp, err := client.Do(emailReq)
 	if err != nil {
-		return err
+		log.Error(err)
+		return ErrGitHubServer
 	}
 	defer emailResp.Body.Close()
 
@@ -170,19 +246,17 @@ func githubCallback(c fiber.Ctx) error {
 	}
 
 	if primaryEmail == "" {
-		return &utils.AppError{
-			Status:  fiber.StatusBadRequest,
-			Message: "No verified primary email found on GitHub account",
-		}
+		return ErrUnverifiedEmail
 	}
 
 	if githubUser.Name == "" {
 		githubUser.Name = githubUser.Login
 	}
 
-	userID, err := db.HandleGithubDatabaseIntegration(
+	userID, err := db.HandleOAuthResult(
 		c,
-		fmt.Sprint(githubUser.ID),
+		"github",
+		strconv.Itoa(githubUser.ID),
 		githubUser.Name,
 		primaryEmail,
 	)
@@ -198,7 +272,7 @@ func githubCallback(c fiber.Ctx) error {
 
 	setSessionCookie(c, session)
 
-	return c.Redirect().To("/")
+	return nil
 }
 
 func generateCodeVerifier() string {
