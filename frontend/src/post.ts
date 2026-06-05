@@ -56,12 +56,11 @@ paginationElement?.addEventListener("page-change", (event) => {
     window.history.replaceState({}, "", `?page=${page}`);
 });
 
+const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+
 export function duration(date: Date): string {
     const diffInMs = date.getTime() - Date.now(); // Negative for past
     const diffInDays = Math.round(diffInMs / (1000 * 60 * 60 * 24));
-
-    // Create the formatter (uses browser language by default)
-    const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
 
     if (diffInDays === 0) return "Today";
     if (diffInDays === -1) return "Yesterday";
