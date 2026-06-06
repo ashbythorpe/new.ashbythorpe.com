@@ -88,7 +88,7 @@ func CreateUserFromOAuth(ctx context.Context, provider string, providerID string
 
 	_, err = tx.ExecContext(
 		ctx, `
-		INSERT INTO users (id, email, name) VALUES (?, ?) RETURNING id
+		INSERT INTO users (id, email, name) VALUES (?, ?, ?)
 		`, id[:], email, name,
 	)
 	if err != nil {
@@ -103,7 +103,7 @@ func CreateUserFromOAuth(ctx context.Context, provider string, providerID string
 	_, err = tx.ExecContext(
 		ctx, `
 		INSERT INTO user_oauth (provider, provider_id, user_id) VALUES (?, ?, ?)
-	`, provider, providerID, id,
+		`, provider, providerID, id[:],
 	)
 	if err != nil {
 		return id, err
@@ -199,7 +199,7 @@ func GetUserStatusByEmail(ctx context.Context, email string) (UserResult, error)
 }
 
 func GetUser(ctx context.Context, session string) (*User, error) {
-	query := "SELECT users.id, users.name FROM sessions LEFT JOIN users ON sessions.user_id = users.id WHERE session.id = ? AND expiry >= ?"
+	query := "SELECT users.id, users.name FROM sessions LEFT JOIN users ON sessions.user_id = users.id WHERE sessions.id = ? AND sessions.expiry >= ?"
 	now := time.Now().Unix()
 	sessionHash := sha256.Sum256([]byte(session))
 
