@@ -186,8 +186,6 @@ func handleGithubCallback(c fiber.Ctx) error {
 		return err
 	}
 
-	log.Infof("%#v", tokenRes)
-
 	if tokenRes.Error != "" {
 		switch tokenRes.Error {
 		case "bad_verification_code":

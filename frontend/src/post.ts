@@ -87,7 +87,7 @@ const createCommentElement = document.querySelector(
 async function getUser(): Promise<User | null> {
     const { user } = await fetch("/api/auth/name").then((x) => x.json());
 
-    if (user !== null) {
+    if (user) {
         navbar.setAttribute("signed-in", "");
         createCommentElement.setAttribute("signed-in", "");
         createCommentElement.addSlot("username", user.name);
