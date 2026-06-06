@@ -103,7 +103,7 @@ func createComment(c fiber.Ctx) error {
 		return err
 	}
 
-	go purgeCommentsCache(postName, result.OriginalReplyTo)
+	go purgeCommentsCache(c, postName, result.OriginalReplyTo)
 
 	return c.JSON(CommentResult{result.ID})
 }
@@ -130,7 +130,7 @@ func editComment(c fiber.Ctx) error {
 		return err
 	}
 
-	go purgeCommentsCache(postName, originalReplyTo)
+	go purgeCommentsCache(c, postName, originalReplyTo)
 
 	return nil
 }
@@ -148,15 +148,15 @@ func deleteComment(c fiber.Ctx) error {
 		return err
 	}
 
-	go purgeCommentsCache(postName, originalReplyTo)
+	go purgeCommentsCache(c, postName, originalReplyTo)
 
 	return nil
 }
 
-func purgeCommentsCache(post string, replyTo *int) {
+func purgeCommentsCache(c fiber.Ctx, post string, replyTo *int) {
 	if replyTo != nil {
-		utils.PurgeCloudflareCache(fmt.Sprintf("%s/api/%s/replies/%d", config.Origin, post, *replyTo))
+		utils.PurgeCloudflareCache(c, fmt.Sprintf("%s/api/%s/replies/%d", config.Origin, post, *replyTo))
 	} else {
-		utils.PurgeCloudflareCache(fmt.Sprintf("%s/api/%s/comments?page=1", config.Origin, post))
+		utils.PurgeCloudflareCache(c, fmt.Sprintf("%s/api/%s/comments?page=1", config.Origin, post))
 	}
 }

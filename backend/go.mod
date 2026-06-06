@@ -5,6 +5,7 @@ go 1.26.0
 require (
 	github.com/gofiber/fiber/v3 v3.3.0
 	github.com/golang-migrate/migrate/v4 v4.19.1
+	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/resend/resend-go/v2 v2.22.0
 	golang.org/x/crypto v0.51.0
@@ -24,7 +25,6 @@ require (
 	github.com/gofiber/schema v1.7.1 // indirect
 	github.com/gofiber/utils/v2 v2.0.6 // indirect
 	github.com/gohugoio/hugo v0.149.1 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.18.6 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.22 // indirect
