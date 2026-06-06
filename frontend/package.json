@@ -10,6 +10,7 @@
   },
   "devDependencies": {
     "@djot/djot": "^0.3.2",
+    "@fullhuman/postcss-purgecss": "^8.0.0",
     "@types/cloudflare-turnstile": "^0.2.2",
     "@types/node": "^25.6.2",
     "magic-string": "^0.30.17",
