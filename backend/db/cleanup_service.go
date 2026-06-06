@@ -28,6 +28,8 @@ func (s *DBCleanupService) Start(ctx context.Context) error {
 
 	go s.runWorker(workerCtx)
 
+	s.state = "running"
+
 	return nil
 }
 

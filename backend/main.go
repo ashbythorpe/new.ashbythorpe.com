@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"errors"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"ashbythorpe.com/website/config"
 	"ashbythorpe.com/website/db"
@@ -13,7 +17,6 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/requestid"
 	"github.com/joho/godotenv"
 )
-
 
 //go:embed migrations/*.sql
 var migrations embed.FS
@@ -67,6 +70,7 @@ func main() {
 	}
 
 	cfg.Services = append(cfg.Services, db.NewDBCleanupService(db.DB))
+	cfg.Services = append(cfg.Services, utils.NewPurgeCacheService())
 
 	utils.SetupResend()
 
@@ -74,5 +78,12 @@ func main() {
 
 	handlers.Setup(app)
 
-	app.Listen(":3000")
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	app.Listen(":3000", fiber.ListenConfig{
+		GracefulContext: ctx,
+	})
+
+	log.Info("Server shut down gracefully")
 }
