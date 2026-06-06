@@ -20,16 +20,18 @@ export default class AuthForm extends Component {
                 authError = "The sign in session expired.";
                 break;
             case "unverified_email":
-                authError = "The primary email of your GitHub account doesn't exist or is unverified.";
+                authError =
+                    "The primary email of your GitHub account doesn't exist or is unverified.";
                 break;
             case "github_server":
                 authError = "We couldn't connect to GitHub right now.";
                 break;
             case "internal":
-                authError = "An internal error occurred."
+                authError = "An internal error occurred.";
                 break;
         }
 
+        console.log(authError);
         if (authError !== null) {
             const authErrorElement = this.select("#auth-error");
             authErrorElement.textContent = authError;
@@ -44,7 +46,7 @@ export default class AuthForm extends Component {
                 authSuccess = "Successfully reset password";
                 break;
             case "account_created":
-                authSuccess  = "Account created successfully";
+                authSuccess = "Account created successfully";
                 break;
         }
 
@@ -84,7 +86,11 @@ export default class AuthForm extends Component {
         if (redirect !== null) {
             url.searchParams.set("redirect", redirect);
         }
-        authLink.href = url.href;
+
+        // Don't set href to avoid prefetching
+        authLink.addEventListener("click", () => {
+            window.location.assign(url);
+        });
 
         const loginForm = this.select<HTMLFormElement>("#login-view");
         loginForm.addEventListener("submit", async (e) => {
@@ -207,8 +213,10 @@ export default class AuthForm extends Component {
         // const loginContainer = this.querySelector("#login-turnstile-container");
         // const signupContainer = this.querySelector("#signup-turnstile-container");
 
+        console.log(import.meta.env);
+
         turnstile.render("#log-in-turnstile", {
-            sitekey: import.meta.env.TURNSTILE_SITE_KEY,
+            sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
             theme: "auto",
             size: "flexible",
             callback: (token) => {
@@ -218,7 +226,7 @@ export default class AuthForm extends Component {
 
         // 0x4AAAAAABuPwLoKiglpi_Nz
         turnstile.render("#sign-up-turnstile", {
-            sitekey: import.meta.env.TURNSTILE_SITE_KEY,
+            sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
             theme: "auto",
             size: "flexible",
             callback: (token) => {
@@ -275,9 +283,3 @@ export default class AuthForm extends Component {
         }
     }
 }
-
-async function secureFetch(url: URL | RequestInfo, init?: RequestInit) {
-    fetch(url, init)
-}
-
-secureFetch("aaa")

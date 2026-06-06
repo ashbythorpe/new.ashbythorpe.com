@@ -4,7 +4,7 @@ compatibility_date = "2025-08-13"
 pages_build_output_dir = "./dist"
 
 [vars]
-TURNSTILE_SITE_KEY="0x4AAAAAABuPwLoKiglpi_Nz"
+VITE_TURNSTILE_SITE_KEY="0x4AAAAAABuPwLoKiglpi_Nz"
 
 [[services]]
 binding = "API_WORKER"
