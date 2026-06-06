@@ -62,10 +62,3 @@ CREATE INDEX IF NOT EXISTS idx_comment_post_timestamp ON comments (
     post_name, created_at DESC
 );
 CREATE INDEX IF NOT EXISTS idx_comment_replies ON comments (original_reply_to);
-
-INSERT INTO users (id, name, email, verified) VALUES (
-    1, 'Ashby Thorpe', 'ashbythorpe@gmail.com', TRUE
-);
-INSERT INTO comments (id, post_name, user_id, content) VALUES (
-    1, 'example', 1, 'A comment'
-);
