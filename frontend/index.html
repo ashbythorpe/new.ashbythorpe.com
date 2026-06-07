@@ -9,22 +9,25 @@
   </head>
   <body>
     <nav-bar selected="home"></nav-bar>
-    <main>
-      <div id="text-container">
-        <div
-          id="header-container"
-          className="w-1/2 border-b border-b-gray-400/70 items-center flex flex-col pb-2 mb-4"
-        >
-          <h1 className="text-3xl text-black-900 font-mono">Hi!</h1>
+    <div id="background">
+      <main>
+        <div id="text-container">
+          <div
+            id="header-container"
+            className="w-1/2 border-b border-b-gray-400/70 items-center flex flex-col pb-2 mb-4"
+          >
+            <h1 className="text-3xl text-black-900 font-mono">Hi!</h1>
+          </div>
+          <p>
+            I&apos;m Ashby Thorpe. I study Mathematics and Computer Science at the
+            University of Bristol. I have experience building complex projects in
+            a variety of programming languages. This website features some of my
+            work.
+          </p>
         </div>
-        <p>
-          I&apos;m Ashby Thorpe. I study Mathematics and Computer Science at the
-          University of Bristol. I have experience building complex projects in
-          a variety of programming languages. This website features some of my
-          work.
-        </p>
-      </div>
-      <include src="./src/icons/bottom_pattern.svg" id="bottom-pattern" />
-    </main>
+        <include src="./src/icons/bottom_pattern.svg" id="bottom-pattern" />
+      </main>
+      <footer-element></footer-element>
+    </div>
   </body>
 </html>

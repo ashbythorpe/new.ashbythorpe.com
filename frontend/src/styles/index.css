@@ -4,12 +4,19 @@ body {
   flex-direction: column;
 }
 
-main {
+#background {
   background-image: linear-gradient(
     var(--color-cerise-red-50),
     var(--color-energy-yellow-50),
     var(--color-indigo-50)
   );
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+}
+
+main {
   flex: 1;
   padding-top: 0.5rem;
   padding-bottom: 1rem;

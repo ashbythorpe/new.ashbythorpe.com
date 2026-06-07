@@ -1,1 +1,11 @@
 @import "global.css";
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+footer-element {
+  margin-top: auto;
+}

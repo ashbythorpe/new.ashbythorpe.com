@@ -1,4 +1,5 @@
 import "./components/navbar/index.ts";
+import "./components/footer/index.ts";
 import "./components/pagination/index.ts";
 import "./components/create-comment/index.ts";
 import { BlogComment } from "./components/comment/index.ts";
