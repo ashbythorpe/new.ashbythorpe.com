@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{{TITLE}}</title>
+    <script
+      src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+      defer
+    ></script>
     <script type="module" src="/src/post.ts"></script>
   </head>
   <body>
@@ -19,7 +23,7 @@
         <blog-pagination></blog-pagination>
       </div>
       <create-comment>
-        <div id="turnstile" slot="turnstile"></div>
+        <div id="create-comment-turnstile" slot="turnstile"></div>
       </create-comment>
     </main>
   </body>

@@ -112,7 +112,7 @@ export default class CreateComment extends Component {
     }
 
     #setupTurnstile() {
-        turnstile.render("#log-in-turnstile", {
+        turnstile.render("#create-comment-turnstile", {
             sitekey: import.meta.env.VITE_TURNSTILE_INVISIBLE_SITE_KEY,
             callback: (token) => {
                 this.#turnstileToken = token;

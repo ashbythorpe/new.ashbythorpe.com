@@ -1,19 +1,74 @@
-import "./marked-temml-extension.ts";
-import { marked } from "marked";
+import RenderWorker from "./markdown-worker.ts?worker";
 import DOMPurify from "dompurify";
 
-DOMPurify.addHook("afterSanitizeAttributes", function (node) {
-    if (node.nodeName === "A") {
-        node.setAttribute("rel", "nofollow ugc noopener noreferrer");
+interface PendingRequest {
+    text: string;
+    resolve: (html: string) => void;
+    reject: (error: Error) => void;
+}
 
-        node.setAttribute("target", "_blank");
+let worker: Worker;
+
+const queue: PendingRequest[] = [];
+let activeRequest: PendingRequest | null = null;
+let terminateTimer: number | null = null;
+
+function startWorker() {
+    worker = new RenderWorker();
+
+    worker.onmessage = (event: MessageEvent<string>) => {
+        if (activeRequest !== null) {
+            if (terminateTimer) {
+                clearTimeout(terminateTimer);
+            }
+
+            activeRequest.resolve(event.data);
+            activeRequest = null;
+
+            processNext();
+        }
+    };
+}
+
+startWorker();
+
+function processNext() {
+    if (activeRequest !== null) {
+        return;
     }
-});
 
-export function renderComment(rawInput: string): string {
-    const rawHTML = marked.parse(rawInput) as unknown as string;
+    activeRequest = queue.shift() ?? null;
 
-    console.log(rawHTML);
+    if (activeRequest === null) {
+        return;
+    }
+
+    worker.postMessage(activeRequest.text);
+
+    terminateTimer = setTimeout(() => {
+        console.error(
+            `Worker hung on comment.`,
+        );
+
+        if (activeRequest !== null) {
+            activeRequest.reject(new Error("Timeout"));
+            activeRequest = null;
+        }
+
+        worker.terminate();
+
+        startWorker();
+
+        processNext();
+    }, 2500);
+}
+
+
+export async function renderComment(text: string): Promise<string> {
+    const rawHTML = await new Promise<string>((resolve, reject) => {
+        queue.push({ text, resolve, reject });
+        processNext();
+    });
 
     const cleanHTML = DOMPurify.sanitize(rawHTML, {
         USE_PROFILES: { mathMl: true },

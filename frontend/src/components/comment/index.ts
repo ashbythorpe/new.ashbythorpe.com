@@ -35,12 +35,7 @@ export class BlogComment extends Component {
             element.internals.states.add("owned");
         }
 
-        console.log(content);
-        const contentElement = document.createElement("div");
-        const rendered = renderComment(content);
-        console.log(rendered);
-        contentElement.innerHTML = rendered;
-        element.addSlot("content", contentElement);
+        element.#renderContent(content);
 
         console.log(replyTo, originalReplyTo);
         if (replyTo !== undefined) {
@@ -60,6 +55,15 @@ export class BlogComment extends Component {
         }
 
         return element;
+    }
+
+    async #renderContent(content: string) {
+        const contentElement = document.createElement("div");
+        contentElement.textContent = content;
+        this.addSlot("content", contentElement);
+
+        const rendered = await renderComment(content);
+        contentElement.innerHTML = rendered;
     }
 
     // Property getter/setter for the internal state
@@ -186,7 +190,8 @@ export class BlogComment extends Component {
                 const content = this.querySelector("span[slot='content']");
 
                 if (content) {
-                    content.replaceChildren(renderComment(newText));
+                    content.textContent = newText;
+                    content.replaceChildren(await renderComment(newText));
                 } else {
                     throw new Error("Couldn't find content");
                 }
