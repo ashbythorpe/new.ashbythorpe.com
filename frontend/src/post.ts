@@ -4,8 +4,9 @@ import "./components/create-comment/index.ts";
 import { BlogComment } from "./components/comment/index.ts";
 import "./styles/post.css";
 import { postName } from "./routes.ts";
-import type { OriginalComment, User } from "./types.ts";
+import type { CommentData, OriginalComment, User } from "./types.ts";
 import type CreateComment from "./components/create-comment/index.ts";
+import { ReplyList } from "./components/replies/index.ts";
 
 interface CommentsResult {
     totalComments: number;
@@ -87,12 +88,52 @@ const createCommentElement = document.querySelector(
 async function getUser(): Promise<User | null> {
     const { user } = await fetch("/api/auth/user").then((x) => x.json());
 
+    createCommentElement.signedIn = user !== null;
+
     if (user) {
         navbar.setAttribute("signed-in", "");
-        createCommentElement.setAttribute("signed-in", "");
         createCommentElement.addSlot("username", user.name);
+        createCommentElement.setUser(user);
         return user;
     }
 
     return null;
 }
+
+createCommentElement.addEventListener("new-comment", (event) => {
+    const comment: CommentData = (event as CustomEvent).detail;
+
+    if (comment.originalReplyTo !== undefined) {
+        const commentElement = document.querySelector<BlogComment>(
+            `#comment-${comment.originalReplyTo}`,
+        );
+
+        if (commentElement) {
+            let commentReplies =
+                commentElement.querySelector<ReplyList>("reply-list");
+
+            if (!commentReplies) {
+                commentReplies = ReplyList.create({
+                    id: comment.originalReplyTo,
+                    userID: comment.userID,
+                    numReplies: 0,
+                });
+
+                commentElement.addSlot("replies", commentReplies);
+            }
+
+            commentReplies.addReply(comment);
+        }
+    } else if (page === 1) {
+        commentsContainer?.prepend(BlogComment.create(comment));
+    }
+});
+
+commentsContainer?.addEventListener("comment-reply", (event) => {
+    console.log((event as CustomEvent).detail);
+    const { id, name } = (event as CustomEvent).detail;
+    console.log(id, name);
+
+    createCommentElement.setAttribute("reply-id", id);
+    createCommentElement.setAttribute("reply-username", name);
+});

@@ -177,8 +177,6 @@ func handleGithubCallback(c fiber.Ctx) error {
 
 	bodyBytes, _ := io.ReadAll(resp.Body)
 
-	fmt.Printf("Request Body: %s\n", string(bodyBytes))
-
 	resp.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
 	var tokenRes GithubAccessTokenResponse

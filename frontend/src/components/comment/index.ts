@@ -9,6 +9,7 @@ export class BlogComment extends Component {
 
     #id!: number;
     #originalReplyTo?: number;
+    #name!: string;
 
     static create({
         id,
@@ -27,6 +28,7 @@ export class BlogComment extends Component {
 
         element.#id = id;
         element.#originalReplyTo = originalReplyTo;
+        element.#name = author.name;
 
         element.id = `comment-${id}`;
         element.setAttribute("comment-id", String(id));
@@ -37,6 +39,7 @@ export class BlogComment extends Component {
 
         element.addSlot("content", content);
 
+        console.log(replyTo, originalReplyTo);
         if (replyTo !== undefined) {
             const replyAnchor = document.createElement("a");
             replyAnchor.href = `#comment-${replyTo.id}`;
@@ -107,6 +110,7 @@ export class BlogComment extends Component {
                 new CustomEvent("comment-reply", {
                     bubbles: true,
                     composed: true,
+                    detail: { id: this.#id, name: this.#name },
                 }),
             );
         });
@@ -135,11 +139,16 @@ export class BlogComment extends Component {
                 },
             );
 
-            if (!result.ok) {
-                throw new Error(await result.text());
-            }
+            if (result.ok) {
+                this.dispatchEvent(
+                    new Event("comment-deleted", {
+                        bubbles: true,
+                        composed: true,
+                    }),
+                );
 
-            this.remove();
+                this.remove();
+            }
         });
 
         this.select("#cancel-edit-btn").addEventListener("click", () => {
@@ -159,13 +168,26 @@ export class BlogComment extends Component {
             // Close the edit state
             this.internals.states.delete("editing");
 
-            await fetch(`/api/post/${postName()}/edit-comment/${this.#id}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
+            const response = await fetch(
+                `/api/post/${postName()}/edit-comment/${this.#id}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ content: newText }),
                 },
-                body: JSON.stringify({ text: newText }),
-            });
+            );
+
+            if (response.ok) {
+                const content = this.querySelector("span[slot='content']");
+
+                if (content) {
+                    content.textContent = newText;
+                } else {
+                    throw new Error("Couldn't find content");
+                }
+            }
         });
     }
 

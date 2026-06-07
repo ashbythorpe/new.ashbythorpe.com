@@ -75,13 +75,13 @@ func GetComments(ctx context.Context, postName string, page int) ([]OriginalComm
 
 func GetReplies(ctx context.Context, postName string, id int) ([]Reply, error) {
 	query := `
-	SELECT comments.id, user.id AS author_id, users.name AS author, comments.content, strftime('%Y-%m-%dT%H:%M:%SZ', comments.created_at) as created_at, comments.reply_to, reply_users.name, comments.original_reply_to
+	SELECT comments.id, users.id AS author_id, users.name AS author, comments.content, strftime('%Y-%m-%dT%H:%M:%SZ', comments.created_at) as created_at, comments.reply_to, reply_users.name, comments.original_reply_to
 	FROM comments
 	LEFT JOIN users ON comments.user_id = users.id
 	LEFT JOIN comments AS original_comments ON comments.reply_to = original_comments.id
 	LEFT JOIN users AS reply_users ON original_comments.user_id = reply_users.id
 	WHERE comments.post_name = ? AND comments.original_reply_to = ?
-	ORDER BY comments.created_at DESC
+	ORDER BY comments.created_at
 	`
 
 	rows, err := DB.QueryContext(ctx, query, postName, id)
@@ -113,8 +113,9 @@ func GetReplies(ctx context.Context, postName string, id int) ([]Reply, error) {
 }
 
 type CreateCommentResult struct {
-	ID int
-	OriginalReplyTo *int
+	ID              int    `json:"id"`
+	CreatedAt       string `json:"createdAt"`
+	OriginalReplyTo *int   `json:"originalReplyTo,omitempty"`
 }
 
 func CreateComment(ctx context.Context, postName string, userID uuid.UUID, content string, replyTo *int) (CreateCommentResult, error) {
@@ -141,11 +142,13 @@ func CreateComment(ctx context.Context, postName string, userID uuid.UUID, conte
 	}
 
 	query := `
-		INSERT INTO comments (post_name, user_id, content, reply_to, original_reply_to) VALUES (?, ?, ?, ?, ?) RETURNING id
+		INSERT INTO comments (post_name, user_id, content, reply_to, original_reply_to)
+		VALUES (?, ?, ?, ?, ?)
+		RETURNING id, strftime('%Y-%m-%dT%H:%M:%SZ', created_at) as created_at
 	`
 
 	row := DB.QueryRowContext(ctx, query, postName, userID[:], content, replyTo, result.OriginalReplyTo)
-	err := row.Scan(&result.ID)
+	err := row.Scan(&result.ID, &result.CreatedAt)
 
 	return result, err
 }
@@ -159,22 +162,22 @@ func EditComment(ctx context.Context, id int, userID uuid.UUID, content string) 
 	`
 
 	row := DB.QueryRowContext(ctx, query, content, id, userID[:])
-	var originalReplyTo int
+	var originalReplyTo *int
 	if err := row.Scan(&originalReplyTo); err != nil {
 		return nil, err
 	}
 
-	return &originalReplyTo, nil
+	return originalReplyTo, nil
 }
 
 func DeleteComment(ctx context.Context, id int, userID uuid.UUID) (*int, error) {
 	query := "DELETE FROM comments WHERE id = ? AND user_id = ? RETURNING original_reply_to"
 
 	row := DB.QueryRowContext(ctx, query, id, userID[:])
-	var originalReplyTo int
+	var originalReplyTo *int
 	if err := row.Scan(&originalReplyTo); err != nil {
 		return nil, err
 	}
 
-	return &originalReplyTo, nil
+	return originalReplyTo, nil
 }

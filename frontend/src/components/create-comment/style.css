@@ -6,7 +6,7 @@
 }
 
 .auth-prompt {
-  display: none; /* Hidden by default */
+  display: flex; /* Hidden by default */
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -43,11 +43,12 @@
 }
 
 /* State Toggling for Auth */
-:host(:state(signed-out)) .form-container {
+:host(:not(:state(signed-out))) .auth-prompt {
   display: none;
 }
-:host(:state(signed-out)) .auth-prompt {
-  display: flex;
+
+:host(:not(:state(signed-in))) .form-container {
+  display: none;
 }
 
 .form-container {
@@ -55,7 +56,6 @@
   flex-direction: column;
   margin: 0 auto;
   width: 83.333333%; /* w-5/6 */
-  border-bottom: 1px solid rgba(156, 163, 175, 0.7); /* border-b-gray-400/70 */
   padding-bottom: 1rem; /* pb-4 */
 }
 
@@ -75,7 +75,7 @@
 
 /* --- Status Indicators (Editing / Replying) --- */
 .status-indicator {
-  display: none; /* Hidden by default */
+  display: flex;
   align-items: center;
   font-size: 0.875rem; /* text-sm */
   color: #9ca3af; /* text-gray-400 approx */
@@ -83,11 +83,11 @@
   margin-bottom: 0.25rem;
 }
 
-:host(:state(editing)) #edit-indicator {
-  display: flex;
+:host(:not(:state(editing))) #edit-indicator {
+  display: none;
 }
-:host(:state(replying)) #reply-indicator {
-  display: flex;
+:host(:not(:state(replying))) #reply-indicator {
+  display: none;
 }
 
 .cancel-btn {
@@ -124,7 +124,9 @@
 
 textarea {
   width: 100%;
-  min-height: 3rem;
+  field-sizing: content;
+  min-height: 5rem;
+  max-height: 200px;
   padding: 0.25rem 0.5rem; /* py-1 px-2 */
   border-radius: 0.25rem;
   outline: none;
@@ -204,8 +206,8 @@ textarea:focus {
 }
 
 /* --- Error Messages --- */
-.error-text {
-  color: #ef4444; /* text-red-500 */
+.error {
+  color: red; /* text-red-500 */
   font-size: 0.875rem;
   margin: 0.25rem 0 0 0;
 }

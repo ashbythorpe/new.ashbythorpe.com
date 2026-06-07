@@ -117,6 +117,11 @@ func sendPurgeRequest(urlSet map[string]struct{}) {
 	for url := range urlSet {
 		urls = append(urls, url)
 	}
+	log.Info("Purging urls: ", urls)
+
+	if config.DevMode {
+		return
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()

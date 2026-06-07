@@ -9,6 +9,7 @@ import (
 	"ashbythorpe.com/website/db"
 	"ashbythorpe.com/website/utils"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/log"
 	"github.com/google/uuid"
 )
 
@@ -81,12 +82,8 @@ func getReplies(c fiber.Ctx) error {
 }
 
 type CommentOpts struct {
-	Text    string `json:"text"`
+	Content string `json:"content"`
 	ReplyTo *int   `json:"replyTo"`
-}
-
-type CommentResult struct {
-	ID int `json:"id"`
 }
 
 func createComment(c fiber.Ctx) error {
@@ -98,18 +95,18 @@ func createComment(c fiber.Ctx) error {
 		return err
 	}
 
-	result, err := db.CreateComment(c, postName, userID, opts.Text, opts.ReplyTo)
+	result, err := db.CreateComment(c, postName, userID, opts.Content, opts.ReplyTo)
 	if err != nil {
 		return err
 	}
 
 	go purgeCommentsCache(c, postName, result.OriginalReplyTo)
 
-	return c.JSON(CommentResult{result.ID})
+	return c.JSON(result)
 }
 
 type EditOpts struct {
-	Text string `json:"text"`
+	Content string `json:"content"`
 }
 
 func editComment(c fiber.Ctx) error {
@@ -125,7 +122,8 @@ func editComment(c fiber.Ctx) error {
 		return err
 	}
 
-	originalReplyTo, err := db.EditComment(c, id, userID, opts.Text)
+	log.Info(opts.Content)
+	originalReplyTo, err := db.EditComment(c, id, userID, opts.Content)
 	if err != nil {
 		return err
 	}

@@ -1,9 +1,12 @@
 import { Component, element } from "../../custom-elements";
+import { duration } from "../../post";
+import { postName } from "../../routes";
+import type { CommentData, User } from "../../types";
 
-export interface CommentSubmitEvent {
-    content: string;
-    editId: string | null;
-    replyId: string | null;
+interface CreateCommentResult {
+    id: number;
+    createdAt: string;
+    originalReplyTo?: number;
 }
 
 @element("create-comment", "./index.html")
@@ -12,16 +15,14 @@ export default class CreateComment extends Component {
         "edit-id",
         "reply-id",
         "reply-username",
-        "signed-in", // New attribute
+        "signed-in",
     ];
+
+    #user: User | null = null;
+    #replyUsername: string | null = null;
 
     connectedCallback(): void {
         this.setupEventListeners();
-
-        // Initialize auth state if the attribute is missing on load
-        if (!this.hasAttribute("signed-in")) {
-            this.signedIn = false;
-        }
     }
 
     attributeChangedCallback(
@@ -29,17 +30,45 @@ export default class CreateComment extends Component {
         _oldValue: string | null,
         newValue: string | null,
     ): void {
-        if (name === "edit-id") this.editing = !!newValue;
-        if (name === "reply-id") this.replying = !!newValue;
-        if (name === "signed-in") this.signedIn = newValue !== null;
+        if (name === "edit-id") this.editing = newValue != null;
+        if (name === "reply-id") this.replying = newValue != null;
 
         if (name === "reply-username") {
+            console.log(newValue);
+            this.#replyUsername = newValue;
             const replySpan = this.select("#reply-username");
             if (replySpan) replySpan.textContent = newValue || "";
         }
     }
 
-    // --- State Management (Updated to Modern Spec) ---
+    setUser(user: User) {
+        this.#user = user;
+    }
+
+    get signedIn() {
+        if (this.internals.states.has("signed-in")) {
+            return true;
+        } else if (this.internals.states.has("signed-out")) {
+            return false;
+        } else {
+            return null;
+        }
+    }
+
+    set signedIn(signedIn: boolean | null) {
+        if (signedIn === true) {
+            this.internals.states.add("signed-in");
+        } else {
+            this.internals.states.delete("signed-in");
+        }
+
+        if (signedIn === false) {
+            this.internals.states.add("signed-out");
+        } else {
+            this.internals.states.delete("signed-out");
+        }
+    }
+
     get editing(): boolean {
         return this.internals.states.has("editing");
     }
@@ -54,15 +83,6 @@ export default class CreateComment extends Component {
     set replying(isReplying: boolean) {
         if (isReplying) this.internals.states.add("replying");
         else this.internals.states.delete("replying");
-    }
-
-    // If they are NOT signed in, we add the "signed-out" state to trigger the CSS
-    get signedIn(): boolean {
-        return !this.internals.states.has("signed-out");
-    }
-    set signedIn(isSignedIn: boolean) {
-        if (isSignedIn) this.internals.states.delete("signed-out");
-        else this.internals.states.add("signed-out");
     }
 
     // --- Content / Pending Getters ---
@@ -82,25 +102,8 @@ export default class CreateComment extends Component {
         btn.setAttribute("aria-disabled", String(isPending));
     }
 
-    // --- Public Methods ---
-    public setErrors(
-        fieldErrors: string[] = [],
-        globalMessage: string | null = null,
-    ): void {
-        const fieldContainer = this.select("#field-errors");
-        const formContainer = this.select("#form-errors");
-
-        fieldContainer.innerHTML = fieldErrors
-            .map((err) => `<p class="error-text">${err}</p>`)
-            .join("");
-        formContainer.innerHTML = globalMessage
-            ? `<p class="error-text">${globalMessage}</p>`
-            : "";
-    }
-
-    public resetForm(): void {
+    #resetForm(): void {
         this.content = "";
-        this.setErrors();
         this.removeAttribute("edit-id");
         this.removeAttribute("reply-id");
         this.removeAttribute("reply-username");
@@ -109,63 +112,105 @@ export default class CreateComment extends Component {
     // --- Internal Events ---
     private setupEventListeners(): void {
         const form = this.select<HTMLFormElement>("#comment-form");
-        const cancelEdit = this.select<HTMLButtonElement>("#cancel-edit-btn");
         const cancelReply = this.select<HTMLButtonElement>("#cancel-reply-btn");
         const textarea = this.select<HTMLTextAreaElement>("#content-input");
         const signInBtn = this.select<HTMLAnchorElement>(
             "#trigger-sign-in-btn",
         );
+        const errorElement = this.select("#error");
 
         const redirect = window.location.pathname;
         const params = new URLSearchParams();
         params.append("redirect", redirect);
         signInBtn.href = `/auth/sign-in/?${params.toString()}`;
 
-        // Clear errors on typing
-        textarea.addEventListener("input", () => this.setErrors());
-
-        cancelEdit.addEventListener("click", () => {
-            this.removeAttribute("edit-id");
-            this.dispatchEvent(
-                new CustomEvent("cancel-edit", {
-                    bubbles: true,
-                    composed: true,
-                }),
-            );
+        textarea.addEventListener("input", () => {
+            errorElement.textContent = "";
         });
 
         cancelReply.addEventListener("click", () => {
-            const oldReplyId = this.getAttribute("reply-id");
             this.removeAttribute("reply-id");
             this.removeAttribute("reply-username");
-
-            this.dispatchEvent(
-                new CustomEvent("cancel-reply", {
-                    bubbles: true,
-                    composed: true,
-                    detail: { previousReplyId: oldReplyId },
-                }),
-            );
         });
 
-        form.addEventListener("submit", (e) => {
+        form.addEventListener("submit", async (e) => {
             e.preventDefault();
 
             const content = this.content.trim();
             if (!content) return;
 
-            const editId = this.getAttribute("edit-id");
-            const replyId = this.getAttribute("reply-id");
+            const replyIdString = this.getAttribute("reply-id");
+            console.log(replyIdString);
+            const replyId = replyIdString ? parseInt(replyIdString) : null;
 
             this.pending = true;
 
+            let result;
+            try {
+                result = await this.#createComment(content, replyId);
+            } catch (e) {
+                if (e instanceof Error) {
+                    errorElement.textContent = e.message;
+                }
+                this.pending = false;
+                return;
+            }
+
+            this.pending = false;
+            const replyUsername = this.#replyUsername;
+
+            this.#resetForm();
+
+            const comment: CommentData = {
+                id: result.id,
+                userID: this.#user!.id,
+                content,
+                author: this.#user!,
+                time: duration(new Date(result.createdAt)),
+                replyTo:
+                    replyId && replyUsername
+                        ? {
+                              id: replyId,
+                              name: replyUsername
+                          }
+                        : undefined,
+                originalReplyTo: result.originalReplyTo,
+            };
+
             this.dispatchEvent(
-                new CustomEvent<CommentSubmitEvent>("comment-submit", {
+                new CustomEvent("new-comment", {
                     bubbles: true,
                     composed: true,
-                    detail: { content, editId, replyId },
+                    detail: comment,
                 }),
             );
         });
+    }
+
+    async #createComment(
+        content: string,
+        replyId: number | null,
+    ): Promise<CreateCommentResult> {
+        const body = replyId ? { content, replyTo: replyId } : { content };
+
+        let response;
+        try {
+            response = await fetch(`/api/post/${postName()}/create-comment`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(body),
+            });
+        } catch (e) {
+            throw new Error("Network error");
+        }
+
+        if (!response.ok) {
+            const { message } = await response.json();
+            throw new Error(message);
+        }
+
+        return await response.json();
     }
 }
