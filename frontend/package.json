@@ -3,10 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@11.5.2",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "scripts": "patch-package"
   },
   "devDependencies": {
     "@djot/djot": "^0.3.2",
@@ -15,13 +17,17 @@
     "@types/node": "^25.6.2",
     "magic-string": "^0.30.17",
     "node-html-parser": "^7.0.1",
+    "patch-package": "^8.0.1",
     "shiki": "^4.0.2",
-    "temml": "^0.13.2",
     "typescript": "^6.0.3",
     "vite": "^8.0.11",
     "wrangler": "^4.32.0"
   },
   "dependencies": {
-    "@fontsource/inter": "^5.2.6"
+    "@fontsource/inter": "^5.2.6",
+    "dompurify": "^3.4.8",
+    "lightningcss": "^1.32.0",
+    "marked": "^18.0.5",
+    "temml": "^0.13.3"
   }
 }

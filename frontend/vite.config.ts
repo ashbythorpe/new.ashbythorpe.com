@@ -41,9 +41,7 @@ export default defineConfig(({ command }) => {
     if (command === "build") {
         postCSSPlugins.push(
             purgecss({
-                content: [
-                    "./**/*.html",
-                ],
+                content: ["./**/*.html"],
                 variables: true,
                 safelist: {
                     variables: getUsedComponentVariables(),
@@ -106,6 +104,11 @@ export default defineConfig(({ command }) => {
         css: {
             postcss: {
                 plugins: postCSSPlugins,
+            },
+        },
+        resolve: {
+            alias: {
+                temml: path.resolve(__dirname, "./src/lib/temml.min.js"),
             },
         },
     };

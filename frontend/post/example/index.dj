@@ -9,3 +9,6 @@ const y = 2;
 ```
 
 $$`e^i \pi`
+
+
+$$`\def\d{\mathrm{d}}  \oint_C \vec{B}\circ \d\vec{l} = \mu_0 \left( I_{\text{enc}} + \varepsilon_0 \frac{\d}{\d t} \int_S {\vec{E} \circ \hat{n}}\; \d a \right)`

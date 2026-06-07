@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"unicode/utf8"
 
 	"ashbythorpe.com/website/config"
 	"ashbythorpe.com/website/db"
@@ -95,6 +96,13 @@ func createComment(c fiber.Ctx) error {
 		return err
 	}
 
+	if utf8.RuneCountInString(opts.Content) > 10000 {
+		return &utils.AppError{
+			Status: fiber.StatusBadRequest,
+			Message: "Comments must be 10,000 characters at most",
+		}
+	}
+
 	result, err := db.CreateComment(c, postName, userID, opts.Content, opts.ReplyTo)
 	if err != nil {
 		return err
@@ -122,7 +130,13 @@ func editComment(c fiber.Ctx) error {
 		return err
 	}
 
-	log.Info(opts.Content)
+	if utf8.RuneCountInString(opts.Content) > 10000 {
+		return &utils.AppError{
+			Status: fiber.StatusBadRequest,
+			Message: "Comments must be 10,000 characters at most",
+		}
+	}
+
 	originalReplyTo, err := db.EditComment(c, id, userID, opts.Content)
 	if err != nil {
 		return err

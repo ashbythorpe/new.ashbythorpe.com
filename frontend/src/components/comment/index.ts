@@ -1,4 +1,5 @@
 import { Component, element } from "../../custom-elements";
+import { renderComment } from "../../post/render-comment";
 import { postName } from "../../routes";
 import type { CommentData } from "../../types";
 import { ReplyList } from "../replies";
@@ -23,9 +24,6 @@ export class BlogComment extends Component {
     }: CommentData): BlogComment {
         const element = document.createElement("blog-comment") as BlogComment;
 
-        console.log(element);
-        console.log(element instanceof BlogComment);
-
         element.#id = id;
         element.#originalReplyTo = originalReplyTo;
         element.#name = author.name;
@@ -37,7 +35,12 @@ export class BlogComment extends Component {
             element.internals.states.add("owned");
         }
 
-        element.addSlot("content", content);
+        console.log(content);
+        const contentElement = document.createElement("div");
+        const rendered = renderComment(content);
+        console.log(rendered);
+        contentElement.innerHTML = rendered;
+        element.addSlot("content", contentElement);
 
         console.log(replyTo, originalReplyTo);
         if (replyTo !== undefined) {
@@ -183,7 +186,7 @@ export class BlogComment extends Component {
                 const content = this.querySelector("span[slot='content']");
 
                 if (content) {
-                    content.textContent = newText;
+                    content.replaceChildren(renderComment(newText));
                 } else {
                     throw new Error("Couldn't find content");
                 }
