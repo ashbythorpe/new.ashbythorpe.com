@@ -5,17 +5,18 @@ import (
 )
 
 var (
-	ResendAPIKey       string
-	DBPath             string
-	Origin             string
-	GitHubClientID     string
-	GitHubClientSecret string
-	Pepper             string
-	TurnstileSecret    string
-	CloudflareZoneID   string
-	CloudflareAPIToken string
-	DevMode            bool
-	Cookies            CookieNames
+	ResendAPIKey             string
+	DBPath                   string
+	Origin                   string
+	GitHubClientID           string
+	GitHubClientSecret       string
+	Pepper                   string
+	TurnstileSecret          string
+	InvisibleTurnstileSecret string
+	CloudflareZoneID         string
+	CloudflareAPIToken       string
+	DevMode                  bool
+	Cookies                  CookieNames
 )
 
 type CookieNames struct {
@@ -39,6 +40,7 @@ func Init() error {
 	GitHubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
 	Pepper = os.Getenv("PEPPER")
 	TurnstileSecret = os.Getenv("TURNSTILE_SECRET_KEY")
+	InvisibleTurnstileSecret = os.Getenv("TURNSTILE_INVISIBLE_SECRET_KEY")
 	CloudflareZoneID = os.Getenv("CLOUDFLARE_ZONE_ID")
 	CloudflareAPIToken = os.Getenv("CLOUDFLARE_API_TOKEN")
 	DevMode = os.Getenv("DEV") != ""

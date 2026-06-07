@@ -5,6 +5,7 @@ pages_build_output_dir = "./dist"
 
 [vars]
 VITE_TURNSTILE_SITE_KEY="0x4AAAAAABuPwLoKiglpi_Nz"
+VITE_TURNSTILE_INVISIBLE_SITE_KEY="0x4AAAAAADgUw-X8Idx_C4ra"
 
 [[services]]
 binding = "API_WORKER"

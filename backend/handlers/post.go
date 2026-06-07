@@ -10,7 +10,6 @@ import (
 	"ashbythorpe.com/website/db"
 	"ashbythorpe.com/website/utils"
 	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/fiber/v3/log"
 	"github.com/google/uuid"
 )
 
@@ -83,8 +82,9 @@ func getReplies(c fiber.Ctx) error {
 }
 
 type CommentOpts struct {
-	Content string `json:"content"`
-	ReplyTo *int   `json:"replyTo"`
+	Content        string `json:"content"`
+	ReplyTo        *int   `json:"replyTo"`
+	TurnstileToken string `json:"turnstileToken"`
 }
 
 func createComment(c fiber.Ctx) error {
@@ -96,9 +96,13 @@ func createComment(c fiber.Ctx) error {
 		return err
 	}
 
+	if err := validateTurnstileToken(c, opts.TurnstileToken, true); err != nil {
+		return err
+	}
+
 	if utf8.RuneCountInString(opts.Content) > 10000 {
 		return &utils.AppError{
-			Status: fiber.StatusBadRequest,
+			Status:  fiber.StatusBadRequest,
 			Message: "Comments must be 10,000 characters at most",
 		}
 	}
@@ -132,7 +136,7 @@ func editComment(c fiber.Ctx) error {
 
 	if utf8.RuneCountInString(opts.Content) > 10000 {
 		return &utils.AppError{
-			Status: fiber.StatusBadRequest,
+			Status:  fiber.StatusBadRequest,
 			Message: "Comments must be 10,000 characters at most",
 		}
 	}

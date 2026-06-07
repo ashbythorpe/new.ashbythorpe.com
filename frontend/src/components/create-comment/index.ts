@@ -20,9 +20,11 @@ export default class CreateComment extends Component {
 
     #user: User | null = null;
     #replyUsername: string | null = null;
+    #turnstileToken: string | null = null;
 
     connectedCallback(): void {
         this.setupEventListeners();
+        this.#setupTurnstile();
     }
 
     attributeChangedCallback(
@@ -109,6 +111,15 @@ export default class CreateComment extends Component {
         this.removeAttribute("reply-username");
     }
 
+    #setupTurnstile() {
+        turnstile.render("#log-in-turnstile", {
+            sitekey: import.meta.env.VITE_TURNSTILE_INVISIBLE_SITE_KEY,
+            callback: (token) => {
+                this.#turnstileToken = token;
+            },
+        });
+    }
+
     // --- Internal Events ---
     private setupEventListeners(): void {
         const form = this.select<HTMLFormElement>("#comment-form");
@@ -171,7 +182,7 @@ export default class CreateComment extends Component {
                     replyId && replyUsername
                         ? {
                               id: replyId,
-                              name: replyUsername
+                              name: replyUsername,
                           }
                         : undefined,
                 originalReplyTo: result.originalReplyTo,
@@ -191,7 +202,13 @@ export default class CreateComment extends Component {
         content: string,
         replyId: number | null,
     ): Promise<CreateCommentResult> {
-        const body = replyId ? { content, replyTo: replyId } : { content };
+        const body: any = {
+            content,
+            turnstileToken: this.#turnstileToken,
+        };
+        if (replyId !== null) {
+            body.replyId = replyId;
+        }
 
         let response;
         try {

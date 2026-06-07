@@ -93,7 +93,7 @@ func login(c fiber.Ctx) error {
 		return err
 	}
 
-	if err := validateTurnstileToken(c, loginData.TurnstileToken); err != nil {
+	if err := validateTurnstileToken(c, loginData.TurnstileToken, false); err != nil {
 		return err
 	}
 
@@ -147,7 +147,7 @@ func signUp(c fiber.Ctx) error {
 		return err
 	}
 
-	if err := validateTurnstileToken(c, signUpData.TurnstileToken); err != nil {
+	if err := validateTurnstileToken(c, signUpData.TurnstileToken, false); err != nil {
 		return err
 	}
 
@@ -267,7 +267,7 @@ func verifyAccount(c fiber.Ctx) error {
 	if err != nil {
 		if errors.Is(err, db.ErrInvalidToken) {
 			return &utils.AppError{
-				Status: fiber.StatusUnauthorized,
+				Status:  fiber.StatusUnauthorized,
 				Message: "Token invalid or expired",
 			}
 		}
@@ -328,12 +328,17 @@ type TurnstileResponse struct {
 	ErrorCodes []string `json:"error-codes"`
 }
 
-func validateTurnstileToken(c fiber.Ctx, token string) error {
+func validateTurnstileToken(c fiber.Ctx, token string, invisible bool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	secret := config.TurnstileSecret
+	if invisible {
+		secret = config.InvisibleTurnstileSecret
+	}
+
 	body := TurnstileRequest{
-		Secret:         config.TurnstileSecret,
+		Secret:         secret,
 		Response:       token,
 		RemoteIP:       c.IP(),
 		IdempotencyKey: rand.Text(),
