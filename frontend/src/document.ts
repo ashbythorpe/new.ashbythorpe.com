@@ -1,4 +1,3 @@
-import "./styles/index.css";
 import "./components/navbar/index.ts";
 import "./components/footer/index.ts";
-import "@fontsource/inter/400.css";
+import "./styles/document.css";

@@ -6,11 +6,16 @@
   font-family: inherit;
 }
 
+#container {
+  display: flex;
+  flex-direction: column;
+  max-width: 24rem;
+}
+
 .auth-card {
   margin-top: 3rem;
   background-color: #ffffff;
   width: 100%;
-  max-width: 24rem;
   border-radius: 0.5rem;
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
@@ -186,4 +191,10 @@ input:focus {
 
 #signup-error, #login-error {
   min-height: 1.5em;
+}
+
+#agreement {
+  margin-inline: 1rem;
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
 }

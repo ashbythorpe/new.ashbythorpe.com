@@ -1,0 +1,83 @@
+@import "global.css";
+
+main {
+  margin-block: 2rem;
+  font-size: 1rem;
+  line-height: 1.75;
+  max-width: 1000px;
+  margin-inline: auto;
+
+  h1 {
+    font-size: 2.25em;
+    margin-top: 0;
+    margin-bottom: 0.89em;
+
+    line-height: 1.11;
+  }
+
+  h2 {
+    font-size: 1.5em;
+    margin-top: 2em;
+    margin-bottom: 1em;
+    line-height: 1.33;
+  }
+
+  p {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+  }
+
+  ol {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+    padding-inline-start: 1.625em;
+  }
+  ul {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+    padding-inline-start: 1.625em;
+  }
+  li {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+  ol > li {
+    padding-inline-start: 0.375em;
+  }
+  ul > li {
+    padding-inline-start: 0.375em;
+  }
+  > ul > li p {
+    margin-top: 0.75em;
+    margin-bottom: 0.75em;
+  }
+  > ul > li > p:first-child {
+    margin-top: 1.25em;
+  }
+  > ul > li > p:last-child {
+    margin-bottom: 1.25em;
+  }
+  > ol > li > p:first-child {
+    margin-top: 1.25em;
+  }
+  > ol > li > p:last-child {
+    margin-bottom: 1.25em;
+  }
+  ul ul,
+  ul ol,
+  ol ul,
+  ol ol {
+    margin-top: 0.75em;
+    margin-bottom: 0.75em;
+  }
+
+  h2 + * {
+    margin-top: 0;
+  }
+  h3 + * {
+    margin-top: 0;
+  }
+  h4 + * {
+    margin-top: 0;
+  }
+}
