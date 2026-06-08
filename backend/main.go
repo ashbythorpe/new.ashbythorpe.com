@@ -57,14 +57,11 @@ func main() {
 		TrustProxy:  true,
 		ProxyHeader: "CF-Connecting-IP",
 		TrustProxyConfig: fiber.TrustProxyConfig{
-			Proxies: []string{
-				"127.0.0.1",
-				"::1",
-			},
+			Loopback: true,
+			Private: true,
 		},
 	}
 
-	
 	if err := db.Init(migrations); err != nil {
 		log.Fatal(err)
 	}

@@ -7,7 +7,6 @@ RUN go mod download && go mod verify
 COPY . .
 RUN go build -v -o /run-app .
 
-
 FROM debian:bookworm
 
 RUN apt-get update && \
@@ -16,12 +15,9 @@ RUN apt-get update && \
 
 COPY --from=litestream/litestream:latest /usr/local/bin/litestream /usr/local/bin/litestream
 
-COPY --from=cloudflare/cloudflared:latest /usr/local/bin/cloudflared /usr/local/bin/cloudflared
-
 WORKDIR /app
 
 COPY --from=builder /run-app /usr/local/bin/
-
 COPY litestream.yml /etc/litestream.yml
 COPY run.sh /app/run.sh
 

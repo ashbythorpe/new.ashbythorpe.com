@@ -1,0 +1,19 @@
+services:
+  web:
+    build: .
+    container_name: ashbythorpe-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - /mnt/sqlite-data:/data
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-tunnel
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - web
