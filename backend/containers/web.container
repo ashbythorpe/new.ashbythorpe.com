@@ -1,0 +1,18 @@
+[Unit]
+Description=My Go API Backend
+After=network-online.target
+
+[Container]
+ContainerName=web
+Image=localhost/ashbythorpe-backend:latest
+EnvironmentFile=%h/ashbythorpe.com/backend/.env
+Volume=/mnt/sqlite-data:/data
+
+LogDriver=json-file
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

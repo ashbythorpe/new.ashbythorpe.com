@@ -22,4 +22,12 @@ jobs:
 
             cd backend
 
-            podman-compose up -d --build
+            mkdir -p ~/.config/containers/systemd/
+
+            cp ./containers/*.container ~/.config/containers/systemd/
+
+            podman build -t localhost/ashbythorpe-backend:latest .
+
+            systemctl --user daemon-reload
+
+            systemctl --user restart web tunnel

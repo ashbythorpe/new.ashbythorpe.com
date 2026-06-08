@@ -13,7 +13,7 @@ RUN apt-get update && \
     apt-get install -y ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=docker.io/library/litestream/litestream:latest /usr/local/bin/litestream /usr/local/bin/litestream
+COPY --from=docker.io/litestream/litestream:latest /usr/local/bin/litestream /usr/local/bin/litestream
 
 WORKDIR /app
 

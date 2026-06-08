@@ -1,0 +1,19 @@
+[Unit]
+Description=Cloudflare Tunnel
+After=web.service
+Requires=web.service
+
+[Container]
+ContainerName=tunnel
+Image=docker.io/cloudflare/cloudflared:latest
+AutoUpdate=registry
+EnvironmentFile=%h/ashbythorpe.com/backend/.env
+Exec=tunnel run
+Network=container:web
+LogDriver=json-file
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
