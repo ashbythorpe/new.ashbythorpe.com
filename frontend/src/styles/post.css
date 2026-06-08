@@ -1,4 +1,5 @@
 @import "global.css";
+@import "Temml-Local.css";
 
 body {
 	min-height: 100vh;

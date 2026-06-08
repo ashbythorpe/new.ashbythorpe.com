@@ -64,7 +64,7 @@ function processNext() {
 }
 
 
-export async function renderComment(text: string): Promise<string> {
+export async function renderComment(text: string): Promise<DocumentFragment> {
     const rawHTML = await new Promise<string>((resolve, reject) => {
         queue.push({ text, resolve, reject });
         processNext();
@@ -73,7 +73,8 @@ export async function renderComment(text: string): Promise<string> {
     const cleanHTML = DOMPurify.sanitize(rawHTML, {
         USE_PROFILES: { mathMl: true },
         ADD_TAGS: ["b", "i", "em", "strong", "p", "br", "a", "code", "pre"],
-        RETURN_DOM_FRAGMENT: false,
+        ADD_ATTR: ["class"],
+        RETURN_DOM_FRAGMENT: true,
     });
 
     return cleanHTML;

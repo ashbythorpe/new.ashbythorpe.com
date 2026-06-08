@@ -3,12 +3,15 @@ import { renderComment } from "../../post/render-comment";
 import { postName } from "../../routes";
 import type { CommentData } from "../../types";
 import { ReplyList } from "../replies";
+import "../comment-content/index.ts";
+import CommentContent from "../comment-content/index.ts";
 
 @element("blog-comment", "./index.html")
 export class BlogComment extends Component {
     static observedAttributes = ["comment-id"];
 
     #id!: number;
+    #content!: string;
     #originalReplyTo?: number;
     #name!: string;
 
@@ -35,7 +38,9 @@ export class BlogComment extends Component {
             element.internals.states.add("owned");
         }
 
-        element.#renderContent(content);
+        element.#content = content;
+        // Wait for <comment-content> to be resolved
+        setTimeout(() => element.#renderContent());
 
         console.log(replyTo, originalReplyTo);
         if (replyTo !== undefined) {
@@ -57,13 +62,16 @@ export class BlogComment extends Component {
         return element;
     }
 
-    async #renderContent(content: string) {
-        const contentElement = document.createElement("div");
-        contentElement.textContent = content;
-        this.addSlot("content", contentElement);
+    async #renderContent() {
+        const contentElement = this.select("comment-content") as CommentContent;
+        console.log(contentElement.constructor);
+        console.log(contentElement instanceof CommentContent);
+        console.log(typeof contentElement);
+        contentElement.setContent(this.#content);
 
-        const rendered = await renderComment(content);
-        contentElement.innerHTML = rendered;
+        console.log(contentElement);
+        const rendered = await renderComment(this.#content);
+        contentElement.setContent(rendered);
     }
 
     // Property getter/setter for the internal state
@@ -125,13 +133,8 @@ export class BlogComment extends Component {
         const editInput = this.select<HTMLTextAreaElement>("#edit-input");
 
         this.select("#edit-btn").addEventListener("click", () => {
-            // Grab the current text from the light DOM slot and put it in the textarea
-            const contentSlot = this.querySelector('[slot="content"]');
-            if (contentSlot) {
-                editInput.value = contentSlot.textContent || "";
-            }
+            editInput.value = this.#content;
             this.internals.states.add("editing");
-            // Optional: Focus the input automatically
             setTimeout(() => editInput.focus(), 0);
         });
 
@@ -166,15 +169,6 @@ export class BlogComment extends Component {
             const newText = editInput.value.trim();
             if (!newText) return; // Prevent saving empty comments
 
-            // Optimistically update the UI in the light DOM
-            const contentSlot = this.querySelector('[slot="content"]');
-            if (contentSlot) {
-                contentSlot.textContent = newText;
-            }
-
-            // Close the edit state
-            this.internals.states.delete("editing");
-
             const response = await fetch(
                 `/api/post/${postName()}/edit-comment/${this.#id}`,
                 {
@@ -186,15 +180,12 @@ export class BlogComment extends Component {
                 },
             );
 
-            if (response.ok) {
-                const content = this.querySelector("span[slot='content']");
+            // Close the edit state
+            this.internals.states.delete("editing");
 
-                if (content) {
-                    content.textContent = newText;
-                    content.replaceChildren(await renderComment(newText));
-                } else {
-                    throw new Error("Couldn't find content");
-                }
+            if (response.ok) {
+                this.#content = newText;
+                this.#renderContent();
             }
         });
     }
