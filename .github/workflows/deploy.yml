@@ -15,7 +15,6 @@ jobs:
           host: ${{ secrets.ORACLE_HOST }}
           username: ubuntu
           key: ${{ secrets.ORACLE_SSH_KEY }}
-          script_stop: true
           script: |
             cd ~/ashbythorpe.com
 
@@ -23,4 +22,4 @@ jobs:
 
             cd backend
 
-            sudo docker compose up -d --build
+            podman-compose up -d --build
