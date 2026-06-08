@@ -10,6 +10,4 @@ rm -f /data/app.db /data/app.db-wal /data/app.db-shm
 #     litestream restore -v -if-replica-exists -o /data/app.db "${LITESTREAM_REPLICA_URL}" || true
 # fi
 
-cloudflared tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN} &
-
 exec litestream replicate -exec "run-app"
