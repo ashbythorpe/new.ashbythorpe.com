@@ -23,11 +23,23 @@ export function staticElement<TFunction extends Function>(
 export abstract class Component extends HTMLElement {
     static __name: string;
     static __templateString?: string;
+    static __cssText?: string;
     static __template: HTMLTemplateElement;
+    // Lazily constructed and cached per class — shared across all instances.
+    private static __sheet?: CSSStyleSheet;
 
     /* @ts-ignore */
     shadowRoot: ShadowRoot;
     protected internals!: ElementInternals;
+
+    private static getSheet(): CSSStyleSheet | null {
+        if (!this.__cssText) return null;
+        if (!this.__sheet) {
+            this.__sheet = new CSSStyleSheet();
+            this.__sheet.replaceSync(this.__cssText);
+        }
+        return this.__sheet;
+    }
 
     private static defineElement() {
         if (this.__templateString !== undefined) {
@@ -44,7 +56,6 @@ export abstract class Component extends HTMLElement {
         if (import.meta.env.DEV) {
             console.log("Go!");
             this.defineElement();
-            // setTimeout(() => this.defineElement(), 0);
         } else {
             this.defineElement();
         }
@@ -52,13 +63,15 @@ export abstract class Component extends HTMLElement {
 
     constructor() {
         super();
-        console.log("I'm in here!");
 
         /* @ts-ignore */
         if (HTMLElement.prototype.hasOwnProperty("attachInternals")) {
             this.internals = this.attachInternals();
 
             if (this.internals.shadowRoot) {
+                // Shadow root was provided declaratively (shadowrootmode="open").
+                // It already has inline <style> tags from the SSR pass, so we
+                // don't need to adopt a stylesheet — just claim the root and return.
                 this.shadowRoot = this.internals.shadowRoot;
                 return;
             }
@@ -77,6 +90,8 @@ export abstract class Component extends HTMLElement {
                 this.shadowRoot.appendChild(template.content);
                 template.remove();
 
+                // The declarative template already carries inline <style> tags,
+                // so no adoptedStyleSheets needed on the polyfill path either.
                 return;
             }
         }
@@ -93,6 +108,17 @@ export abstract class Component extends HTMLElement {
         const template = this.constructor.__template.cloneNode(true);
 
         this.shadowRoot.appendChild(template.content);
+
+        // Apply the shared per-class CSSStyleSheet. This is only reached for
+        // elements constructed dynamically (not via a declarative shadow root),
+        // which are always non-static. The sheet is constructed once and reused
+        // across every instance, avoiding per-instance <style> duplication.
+        /* @ts-ignore */
+        const sheet = (this.constructor as typeof Component).getSheet();
+        console.log(sheet);
+        if (sheet) {
+            this.shadowRoot.adoptedStyleSheets = [sheet];
+        }
     }
 
     get name(): string {

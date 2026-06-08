@@ -11,8 +11,13 @@ interface ComponentBundle {
     name: string;
     templatePath: string;
     sourceFile: string;
+    /** Full template HTML with inline <style> tags — used only by transformIndexHtml for SSR. */
     template: string;
+    /** Template HTML with <style> tags stripped — exported to the client for dynamic construction. */
+    templateString: string;
+    cssText: string;
     cssFiles: Set<string>;
+    static: boolean;
 }
 
 interface ElementDefinition {
@@ -157,23 +162,32 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                     const bundle = await createComponentBundle(element, id);
                     componentBundles.set(element.name, bundle);
 
-                    // Create virtual import IDs
                     const templateId = `virtual:template:${element.name}`;
-
-                    const templateVarName =
-                        toCamelCase(element.name) + "Template";
+                    const templateVarName = toCamelCase(element.name) + "Template";
+                    const cssVarName = toCamelCase(element.name) + "Css";
 
                     if (!element.static || isDev) {
-                        imports.push(
-                            `import ${templateVarName} from "${templateId}";`,
-                        );
+                        if (element.static) {
+                            // Static elements only need the template string (for dev HMR);
+                            // no CSS import since adoptedStyleSheets is never used.
+                            imports.push(
+                                `import { template as ${templateVarName} } from "${templateId}";`,
+                            );
+                        } else {
+                            // Non-static elements import both — template for the fallback
+                            // dynamic-attach path, css for adoptedStyleSheets.
+                            imports.push(
+                                `import { template as ${templateVarName}, css as ${cssVarName} } from "${templateId}";`,
+                            );
+                        }
                     }
 
                     if (!element.static || isDev) {
-                        s.appendLeft(
-                            element.classNode.members.pos,
-                            `\n    static __templateString = ${templateVarName};\n`,
-                        );
+                        const injected = element.static
+                            ? `\n    static __templateString = ${templateVarName};\n`
+                            : `\n    static __templateString = ${templateVarName};\n    static __cssText = ${cssVarName};\n`;
+
+                        s.appendLeft(element.classNode.members.pos, injected);
                     }
 
                     this.addWatchFile(bundle.templatePath);
@@ -213,10 +227,22 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                     this.warn(
                         `Component bundle for "${elementName}" not found`,
                     );
-                    return { code: 'export default "";', moduleType: "js" };
+                    return {
+                        code: 'export const template = ""; export const css = "";',
+                        moduleType: "js",
+                    };
                 }
 
-                const res = `export default ${JSON.stringify(bundle.template)};`;
+                // Export templateString (styles stripped) as `template` — this is what
+                // the client uses for dynamic construction, where adoptedStyleSheets
+                // supplies the styles. The full template (with <style> tags) is only
+                // ever used server-side in transformIndexHtml and is never shipped to
+                // the client. Static elements never import `css`, so it is tree-shaken.
+                const res = [
+                    `export const template = ${JSON.stringify(bundle.templateString)};`,
+                    `export const css = ${JSON.stringify(bundle.cssText)};`,
+                ].join("\n");
+
                 return { code: res, moduleType: "js" };
             }
 
@@ -269,6 +295,8 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                                         templateElement,
                                     );
 
+                                    // template already contains inlined <style> tags,
+                                    // so shadowrootmode="open" gets styles for free.
                                     const shadowTemplate = `<template shadowrootmode="open">${templateElement.innerHTML}</template>`;
                                     element.insertAdjacentHTML(
                                         "afterbegin",
@@ -337,51 +365,55 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
             resolve(root, templateBaseDir),
         );
 
-        const { template, cssFiles } = await loadTemplate(templatePath);
+        const { template, templateString, cssText, cssFiles } = await loadTemplate(templatePath);
 
         return {
             name: element.name,
             templatePath,
             sourceFile,
             template,
+            templateString,
+            cssText,
             cssFiles,
+            static: element.static,
         };
     }
 
     async function reloadBundle(bundle: ComponentBundle): Promise<void> {
-        const { template, cssFiles } = await loadTemplate(bundle.templatePath);
+        const { template, templateString, cssText, cssFiles } = await loadTemplate(bundle.templatePath);
 
         bundle.template = template;
+        bundle.templateString = templateString;
+        bundle.cssText = cssText;
         bundle.cssFiles = cssFiles;
     }
 
     async function loadTemplate(templatePath: string): Promise<{
         template: string;
+        templateString: string;
+        cssText: string;
         cssFiles: Set<string>;
     }> {
-        let template: string;
+        let rawTemplate: string;
         try {
-            template = await readFile(templatePath, "utf-8");
+            rawTemplate = await readFile(templatePath, "utf-8");
         } catch (e) {
             throw new Error(
                 `Error opening template file (${templatePath}): ${e}`,
             );
         }
 
-        const templateElement = parse(template);
+        const templateElement = parse(rawTemplate);
 
         const cssFiles: Set<string> = new Set();
+        const cssChunks: string[] = [];
 
         // Process <include> elements in the template
-        const includedFiles = await processIncludes(
+        await processIncludes(
             templateElement,
             dirname(templatePath),
             root,
         );
-        // Note: included files aren't added to cssFiles but are
-        // watched via the template reload path. If you want
-        // granular HMR for included SVGs, add them to a separate
-        // tracked set and handle in handleHotUpdate.
 
         for (const linkElement of templateElement.querySelectorAll(
             "link[rel='stylesheet']",
@@ -405,7 +437,9 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
             });
 
             const minified = result.code.toString();
+            cssChunks.push(minified);
 
+            // Keep <style> inline in the template for SSR / shadowrootmode consumers.
             linkElement.replaceWith(`<style>${minified}</style>`);
 
             // Track the entry file itself
@@ -429,11 +463,28 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                 sourceMap: false,
             });
 
-            styleElement.textContent = result.code.toString();
+            const minified = result.code.toString();
+            styleElement.textContent = minified;
+            cssChunks.push(minified);
         }
 
+        // template: full HTML with <style> tags — for transformIndexHtml SSR only,
+        //           never shipped to the client as a JS string.
+        const template = templateElement.outerHTML;
+
+        // templateString: <style> tags stripped — exported via the virtual module
+        //                 for dynamic construction, where adoptedStyleSheets
+        //                 supplies the styles instead.
+        for (const styleElement of templateElement.querySelectorAll("style")) {
+            styleElement.remove();
+        }
+        const templateString = templateElement.outerHTML;
+
         return {
-            template: templateElement.outerHTML,
+            template,
+            templateString,
+            // Concatenation is safe: minified CSS blocks are self-contained.
+            cssText: cssChunks.join(""),
             cssFiles,
         };
     }
