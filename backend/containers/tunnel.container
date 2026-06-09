@@ -9,7 +9,7 @@ Image=docker.io/cloudflare/cloudflared:latest
 AutoUpdate=registry
 EnvironmentFile=%h/ashbythorpe.com/backend/.env
 Exec=tunnel run
-Network=container:web
+Network=host
 LogDriver=json-file
 
 [Service]

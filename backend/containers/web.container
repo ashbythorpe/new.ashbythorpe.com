@@ -7,8 +7,8 @@ ContainerName=web
 Image=localhost/ashbythorpe-backend:latest
 EnvironmentFile=%h/ashbythorpe.com/backend/.env
 Volume=/mnt/sqlite-data:/data
-
 LogDriver=json-file
+PublishPort=127.0.0.1:3000:3000
 
 [Service]
 Restart=always
