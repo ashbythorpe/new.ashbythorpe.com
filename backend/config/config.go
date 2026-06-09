@@ -17,6 +17,10 @@ var (
 	CloudflareAPIToken       string
 	DevMode                  bool
 	Cookies                  CookieNames
+	SMTPHost                 string
+	SMTPPort                 string
+	SMTPUsername             string
+	SMTPPassword             string
 )
 
 type CookieNames struct {
@@ -43,6 +47,10 @@ func Init() error {
 	InvisibleTurnstileSecret = os.Getenv("TURNSTILE_INVISIBLE_SECRET_KEY")
 	CloudflareZoneID = os.Getenv("CLOUDFLARE_ZONE_ID")
 	CloudflareAPIToken = os.Getenv("CLOUDFLARE_API_TOKEN")
+	SMTPHost = os.Getenv("SMTP_HOST")
+	SMTPPort = os.Getenv("SMTP_PORT")
+	SMTPUsername = os.Getenv("SMTP_USERNAME")
+	SMTPPassword = os.Getenv("SMTP_PASSWORD")
 	DevMode = os.Getenv("DEV") != ""
 
 	if DevMode {
