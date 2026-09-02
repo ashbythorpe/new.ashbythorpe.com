@@ -13,7 +13,7 @@ jobs:
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.ORACLE_HOST }}
-          username: ubuntu
+          username: opc
           key: ${{ secrets.ORACLE_SSH_KEY }}
           script: |
             cd ~/ashbythorpe.com
