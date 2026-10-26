@@ -6,6 +6,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"time"
 
 	"ashbythorpe.com/website/config"
 	"github.com/gofiber/fiber/v3/log"
@@ -19,15 +20,18 @@ var DB *sql.DB
 
 func Init(migrations embed.FS) error {
 	source, err := iofs.New(migrations, "migrations")
-
 	if err != nil {
 		return err
 	}
 
-	db, err := sql.Open("sqlite", fmt.Sprintf("file:%s?_pragma=journal_mode(WAL)&_pragma=foreign_keys(ON)", config.DBPath))
+	db, err := sql.Open("sqlite", fmt.Sprintf("file:%s?_pragma=journal_mode(WAL)&_pragma=foreign_keys(ON)&_busy_timeout(5000)", config.DBPath))
 	if err != nil {
 		return err
 	}
+
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
+	db.SetConnMaxLifetime(5 * time.Minute)
 
 	DB = db
 

@@ -116,7 +116,7 @@ func githubCallback(c fiber.Ctx) error {
 
 func validateRedirect(redirect string) string {
 	if redirect == "" || !strings.HasPrefix(redirect, "/") || strings.HasPrefix(redirect, "//") {
-		return "/"
+		return "/blog/"
 	}
 
 	return redirect

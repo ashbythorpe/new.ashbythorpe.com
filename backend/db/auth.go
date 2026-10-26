@@ -37,7 +37,7 @@ func CreateSession(ctx context.Context, userID uuid.UUID) (string, error) {
 }
 
 func VerifySession(ctx context.Context, session string) (uuid.UUID, error) {
-	query := `SELECT user_id FROM sessions WHERE id = ? AND expiry >= ?`
+	query := `SELECT user_id FROM sessions WHERE id = ? AND expiry >= ? AND verified = TRUE`
 	now := time.Now().Unix()
 	sessionHash := sha256.Sum256([]byte(session))
 

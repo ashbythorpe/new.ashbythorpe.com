@@ -20,14 +20,18 @@ type PurgeCacheService struct {
 	queue  chan string
 	state  string
 	cancel context.CancelFunc
-	done chan struct{}
+	done   chan struct{}
+	client *http.Client
 }
 
 func NewPurgeCacheService() *PurgeCacheService {
 	return &PurgeCacheService{
 		queue: make(chan string, 500),
 		state: "initialized",
-		done: make(chan struct{}),
+		done:  make(chan struct{}),
+		client: &http.Client{
+			Timeout: 10 * time.Second,
+		},
 	}
 }
 
@@ -54,19 +58,19 @@ func (s *PurgeCacheService) runWorker(ctx context.Context) {
 			batch[url] = struct{}{}
 
 			if len(batch) >= 30 {
-				sendPurgeRequest(batch)
+				sendPurgeRequest(s.client, batch)
 				batch = make(map[string]struct{})
 				ticker.Reset(2 * time.Second)
 			}
 
 		case <-ticker.C:
 			if len(batch) > 0 {
-				sendPurgeRequest(batch)
+				sendPurgeRequest(s.client, batch)
 				batch = make(map[string]struct{})
 			}
 		case <-ctx.Done():
 			if len(batch) > 0 {
-				sendPurgeRequest(batch)
+				sendPurgeRequest(s.client, batch)
 			}
 			return
 		}
@@ -112,7 +116,7 @@ type PurgeCacheRequestBody struct {
 	Files []string `json:"files"`
 }
 
-func sendPurgeRequest(urlSet map[string]struct{}) {
+func sendPurgeRequest(client *http.Client, urlSet map[string]struct{}) {
 	var urls []string
 	for url := range urlSet {
 		urls = append(urls, url)
@@ -150,7 +154,6 @@ func sendPurgeRequest(urlSet map[string]struct{}) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", config.CloudflareAPIToken))
 
-	client := http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Error(err)
