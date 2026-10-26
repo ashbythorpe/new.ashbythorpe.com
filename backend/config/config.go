@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 )
 
 var (
@@ -18,7 +19,7 @@ var (
 	DevMode                  bool
 	Cookies                  CookieNames
 	SMTPHost                 string
-	SMTPPort                 string
+	SMTPPort                 int
 	SMTPUsername             string
 	SMTPPassword             string
 )
@@ -48,7 +49,13 @@ func Init() error {
 	CloudflareZoneID = os.Getenv("CLOUDFLARE_ZONE_ID")
 	CloudflareAPIToken = os.Getenv("CLOUDFLARE_API_TOKEN")
 	SMTPHost = os.Getenv("SMTP_HOST")
-	SMTPPort = os.Getenv("SMTP_PORT")
+
+	var err error
+	SMTPPort, err = strconv.Atoi(os.Getenv("SMTP_PORT"))
+	if err != nil {
+		return err
+	}
+
 	SMTPUsername = os.Getenv("SMTP_USERNAME")
 	SMTPPassword = os.Getenv("SMTP_PASSWORD")
 	DevMode = os.Getenv("DEV") != ""

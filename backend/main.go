@@ -66,7 +66,7 @@ func main() {
 		ProxyHeader: "CF-Connecting-IP",
 		TrustProxyConfig: fiber.TrustProxyConfig{
 			Loopback: true,
-			Private: true,
+			Private:  true,
 		},
 	}
 
@@ -74,10 +74,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cfg.Services = append(cfg.Services, db.NewDBCleanupService(db.DB))
-	cfg.Services = append(cfg.Services, utils.NewPurgeCacheService())
-
-	utils.SetupResend()
+	cfg.Services = append(
+		cfg.Services,
+		db.NewDBCleanupService(db.DB),
+		utils.NewPurgeCacheService(),
+		utils.NewEmailService(),
+	)
 
 	app := fiber.New(*cfg)
 

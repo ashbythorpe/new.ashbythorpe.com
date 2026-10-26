@@ -16,6 +16,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/log"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
+	"github.com/google/uuid"
 )
 
 func SetupAuthRoutes(app *fiber.App) {
@@ -106,6 +107,8 @@ func login(c fiber.Ctx) error {
 		return err
 	}
 
+	createSession(c, result.ID)
+
 	if !result.Verified {
 		return &utils.AppError{
 			Status:  fiber.StatusUnauthorized,
@@ -114,6 +117,10 @@ func login(c fiber.Ctx) error {
 		}
 	}
 
+	return nil
+}
+
+func createSession(c fiber.Ctx, id uuid.UUID) error {
 	prevSession := c.Cookies(config.Cookies.Session)
 	if prevSession != "" {
 		err := db.DeleteSession(context.WithoutCancel(c), prevSession)
@@ -122,7 +129,7 @@ func login(c fiber.Ctx) error {
 		}
 	}
 
-	session, err := db.CreateSession(context.WithoutCancel(c.Context()), result.ID)
+	session, err := db.CreateSession(context.WithoutCancel(c.Context()), id)
 	if err != nil {
 		return err
 	}
@@ -151,7 +158,7 @@ func signUp(c fiber.Ctx) error {
 		return err
 	}
 
-	_, err = db.CreateUser(
+	id, err := db.CreateUser(
 		c,
 		signUpData.Email,
 		signUpData.Password,
@@ -167,6 +174,8 @@ func signUp(c fiber.Ctx) error {
 
 		return err
 	}
+
+	createSession(c, id)
 
 	return nil
 }
@@ -196,6 +205,7 @@ func sendVerification(c fiber.Ctx) error {
 
 	token, err := db.CreateVerificationToken(context.WithoutCancel(c.Context()), result.ID)
 	if err != nil {
+		log.Error("Couldn't create verification token")
 		if errors.Is(err, db.ErrExistingToken) {
 			return nil
 		}
@@ -203,7 +213,7 @@ func sendVerification(c fiber.Ctx) error {
 		return err
 	}
 
-	go utils.SendMagicLinkEmail(token, data.Email)
+	go utils.SendMagicLinkEmail(c, token, data.Email)
 
 	return nil
 }
@@ -231,7 +241,7 @@ func requestPasswordReset(c fiber.Ctx) error {
 		return err
 	}
 
-	go utils.SendPasswordResetEmail(token, req.Email)
+	go utils.SendPasswordResetEmail(c, token, req.Email)
 
 	return nil
 }

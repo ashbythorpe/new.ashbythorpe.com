@@ -22,47 +22,47 @@ type User struct {
 }
 
 // CreateUser creates a user, returning the user's ID
-func CreateUser(ctx context.Context, email string, password string, name string) (*uuid.UUID, error) {
+func CreateUser(ctx context.Context, email string, password string, name string) (uuid.UUID, error) {
 	hashedPassword := hashPassword(password)
 	id, err := uuid.NewV7()
 	if err != nil {
-		return nil, err
+		return id, err
 	}
 
 	tx, err := DB.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return id, err
 	}
 	defer tx.Rollback()
 
 	_, err = tx.ExecContext(
 		ctx, `
-		INSERT INTO users (id, email, name) VALUES (?, ?)
+		INSERT INTO users (id, email, name) VALUES (?, ?, ?)
 		`, id[:], email, name,
 	)
 	if err != nil {
 		if sqlErr, ok := errors.AsType[*sqlite.Error](err); ok {
 			if sqlErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
-				return nil, ErrEmailAlreadyExists
+				return id, ErrEmailAlreadyExists
 			}
 		}
-		return nil, err
+		return id, err
 	}
 
 	_, err = tx.ExecContext(
 		ctx, `
 		INSERT INTO user_passwords (user_id, password, salt) VALUES (?, ?, ?)
-	`, id, hashedPassword.hash, hashedPassword.salt,
+		`, id[:], hashedPassword.hash, hashedPassword.salt,
 	)
 	if err != nil {
-		return nil, err
+		return id, err
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, err
+		return id, err
 	}
 
-	return &id, nil
+	return id, nil
 }
 
 func DeleteUser(ctx context.Context, email string) error {
@@ -188,9 +188,10 @@ func ValidateUser(ctx context.Context, email string, password string) (UserResul
 func GetUserStatusByEmail(ctx context.Context, email string) (UserResult, error) {
 	query := `SELECT id, verified FROM users WHERE email = ?`
 
-	var id uuid.UUID
+	log.Info(email)
+
 	var result UserResult
-	err := DB.QueryRowContext(ctx, query, email).Scan(&id, &result.Verified)
+	err := DB.QueryRowContext(ctx, query, email).Scan(&result.ID, &result.Verified)
 	if err != nil {
 		return result, err
 	}
