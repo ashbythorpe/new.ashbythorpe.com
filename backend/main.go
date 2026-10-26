@@ -22,6 +22,14 @@ import (
 var migrations embed.FS
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		if err := utils.HealthCheck(); err != nil {
+			log.Fatal(err)
+		}
+
+		return
+	}
+
 	if err := godotenv.Load(); err != nil {
 		log.Error(err)
 	}

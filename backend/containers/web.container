@@ -1,18 +1,40 @@
 [Unit]
-Description=My Go API Backend
-After=network-online.target
+Description=Go API Backend
+Requires=restore.container
+After=restore.container
+Wants=litestream.container
+After=litestream.container
 
 [Container]
 ContainerName=web
 Image=localhost/ashbythorpe-backend:latest
-EnvironmentFile=%h/ashbythorpe.com/backend/.env
+Pod=web.pod
+
 Volume=/mnt/sqlite-data:/data:Z
-LogDriver=json-file
-PublishPort=127.0.0.1:3000:3000
+
+HealthCmd=/usr/local/bin/run-app healthcheck
+HealthOnFailure=kill
+Notify=healthy
+
+Environment=ORIGIN=https://new.ashbythorpe.com
+Environment=DB_PATH=/data/app.db
+Environment=LITESTREAM_BUCKET=ashbythorpe-litestream
+Environment=LITESTREAM_ENDPOINT=https://4fdb09e24293ab3eb62c679b300a2158.r2.cloudflarestorage.com
+Environment=LITESTREAM_REPLICA_URL=s3://ashbythorpe-litestream/db
+Environment=SMTP_HOST=smtp.email.uk-london-1.oci.oraclecloud.com
+Environment=SMTP_PORT=587
+Environment=CLOUDFLARE_ZONE_ID=d8332806464b1ed9c67aece983f47e4b
+
+Secret=litestream-access-key,type=env,target=LITESTREAM_ACCESS_KEY
+Secret=litestream-secret-access-key,type=env,target=LITESTREAM_SECRET_ACCESS_KEY
+Secret=github-client-id,type=env,target=GITHUB_CLIENT_ID
+Secret=github-client-secret,type=env,target=GITHUB_CLIENT_SECRET
+Secret=turnstile-secret-key,type=env,target=TURNSTILE_SECRET_KEY
+Secret=turnstile-invisible-secret-key,type=env,target=TURNSTILE_INVISIBLE_SECRET_KEY
+Secret=cloudflare-api-token,type=env,target=CLOUDFLARE_API_TOKEN
+Secret=smtp-username,type=env,target=SMTP_USERNAME
+Secret=smtp-password,type=env,target=SMTP_PASSWORD
 
 [Service]
 Restart=always
 TimeoutStartSec=900
-
-[Install]
-WantedBy=default.target

@@ -13,16 +13,12 @@ RUN apt-get update && \
     apt-get install -y ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=docker.io/litestream/litestream:latest /usr/local/bin/litestream /usr/local/bin/litestream
-
 WORKDIR /app
 
 COPY --from=builder /run-app /usr/local/bin/
-COPY litestream.yml /etc/litestream.yml
-COPY run.sh /app/run.sh
 
-RUN chmod +x /app/run.sh
+USER 1000:1000
 
 EXPOSE 3000
 
-CMD ["/app/run.sh"]
+CMD ["/usr/local/bin/run-app"]

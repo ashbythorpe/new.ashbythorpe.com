@@ -6,14 +6,13 @@ Requires=web.service
 [Container]
 ContainerName=tunnel
 Image=docker.io/cloudflare/cloudflared:latest
+Pod=web.pod
 AutoUpdate=registry
-EnvironmentFile=%h/ashbythorpe.com/backend/.env
+
+Secret=cloudflare-tunnel-token
+Environment=TUNNEL_TOKEN_FILE=/run/secrets/cloudflare-tunnel-token
+
 Exec=tunnel run
-Network=host
-LogDriver=json-file
 
 [Service]
 Restart=always
-
-[Install]
-WantedBy=default.target

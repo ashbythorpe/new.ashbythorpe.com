@@ -1,0 +1,24 @@
+[Unit]
+Description=Litestream DB replication
+Requires=restore.container
+After=restore.container
+
+[Container]
+ContainerName=litestream
+Image=docker.io/litestream/litestream:latest
+Pod=web.pod
+
+Volume=/mnt/sqlite-data:/data:Z
+Volume=%h/ashbythorpe.com/backend/litestream.yml:/etc/litestream.yml:ro,Z
+
+Environment=LITESTREAM_BUCKET=ashbythorpe-litestream
+Environment=LITESTREAM_ENDPOINT=https://4fdb09e24293ab3eb62c679b300a2158.r2.cloudflarestorage.com
+Environment=LITESTREAM_REPLICA_URL=s3://ashbythorpe-litestream/db
+
+Secret=litestream-access-key,type=env,target=LITESTREAM_ACCESS_KEY
+Secret=litestream-secret-access-key,type=env,target=LITESTREAM_SECRET_ACCESS_KEY
+
+Exec=replicate
+
+[Service]
+Restart=always

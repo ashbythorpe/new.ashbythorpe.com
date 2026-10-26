@@ -1,0 +1,8 @@
+[Pod]
+PodName=web
+ExitPolicy=continue
+
+UserNS=keep-id:uid=1000,gid=1000
+
+[Install]
+WantedBy=default.target

@@ -24,7 +24,7 @@ jobs:
 
             mkdir -p ~/.config/containers/systemd/
 
-            cp ./containers/*.container ~/.config/containers/systemd/
+            cp ./containers/* ~/.config/containers/systemd/
 
             podman build -t localhost/ashbythorpe-backend:latest .
 
