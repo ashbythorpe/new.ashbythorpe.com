@@ -1,18 +1,18 @@
 <link rel="stylesheet" href="style.css">
 
 <div class="auth-prompt">
-  <p>You must be signed in to leave a comment.</p>
-  <a id="trigger-sign-in-btn" class="sign-in-btn">Sign In / Register</button>
+  <a id="trigger-sign-in-btn" class="sign-in-btn">Log in / Register</a>
 </div>
 
 <form id="comment-form" class="form-container">
+  <h2 class="form-heading">Leave a comment</h2>
   <div class="input-section">
     <!-- Replying Indicator -->
     <div id="reply-indicator" class="status-indicator">
       <p style="margin: 0">
         Replying to <span id="reply-username" class="reply-target"></span>
       </p>
-      <button type="button" id="cancel-reply-btn" class="cancel-btn">
+      <button type="button" id="cancel-reply-btn" class="cancel-btn" aria-label="Cancel reply">
         <svg
           class="icon-sm"
           fill="none"
@@ -30,13 +30,15 @@
     </div>
 
     <div class="user-badge">
-      <slot name="username">Guest</slot>
+      Commenting as <slot name="username">Guest</slot>
     </div>
 
     <div class="textarea-wrapper">
       <textarea
         id="content-input"
         name="content"
+        aria-label="Your comment"
+        required
         placeholder="Add a comment..."
       ></textarea>
     </div>
@@ -46,9 +48,9 @@
 
   <div class="action-section">
     <button type="submit" id="submit-btn" class="submit-btn">
-      <p style="margin: 0">Comment</p>
+      <span>Post comment</span>
       <include src="../../icons/paper-airplane.svg" class="icon" />
     </button>
-    <p id="error" class="error"></p>
+    <p id="error" class="error" role="alert"></p>
   </div>
 </form>

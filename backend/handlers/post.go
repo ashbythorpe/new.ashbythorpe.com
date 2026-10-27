@@ -2,11 +2,9 @@ package handlers
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"unicode/utf8"
 
-	"ashbythorpe.com/website/config"
 	"ashbythorpe.com/website/db"
 	"ashbythorpe.com/website/utils"
 	"github.com/gofiber/fiber/v3"
@@ -54,11 +52,7 @@ func getComments(c fiber.Ctx) error {
 
 	result.TotalComments = count
 
-	if page > 1 {
-		c.Set("Cache-Control", "public, s-maxage=30, stale-while-revalidate=120")
-	} else {
-		c.Set("Cache-Control", "public, s-maxage=2592000")
-	}
+	c.Set("Cache-Control", "public, max-age=0, s-maxage=15, must-revalidate")
 
 	return c.JSON(result)
 }
@@ -76,7 +70,7 @@ func getReplies(c fiber.Ctx) error {
 		return err
 	}
 
-	c.Set("Cache-Control", "public, s-maxage=2592000")
+	c.Set("Cache-Control", "public, max-age=0, s-maxage=15, must-revalidate")
 
 	return c.JSON(replies)
 }
@@ -112,8 +106,6 @@ func createComment(c fiber.Ctx) error {
 		return err
 	}
 
-	go purgeCommentsCache(c, postName, result.OriginalReplyTo)
-
 	return c.JSON(result)
 }
 
@@ -122,7 +114,6 @@ type EditOpts struct {
 }
 
 func editComment(c fiber.Ctx) error {
-	postName := c.Params("post")
 	userID := c.Locals("userID").(uuid.UUID)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -141,38 +132,25 @@ func editComment(c fiber.Ctx) error {
 		}
 	}
 
-	originalReplyTo, err := db.EditComment(c, id, userID, opts.Content)
+	_, err = db.EditComment(c, id, userID, opts.Content)
 	if err != nil {
 		return err
 	}
-
-	go purgeCommentsCache(c, postName, originalReplyTo)
 
 	return nil
 }
 
 func deleteComment(c fiber.Ctx) error {
-	postName := c.Params("post")
 	userID := c.Locals("userID").(uuid.UUID)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return err
 	}
 
-	originalReplyTo, err := db.DeleteComment(c, id, userID)
+	_, err = db.DeleteComment(c, id, userID)
 	if err != nil {
 		return err
 	}
 
-	go purgeCommentsCache(c, postName, originalReplyTo)
-
 	return nil
-}
-
-func purgeCommentsCache(c fiber.Ctx, post string, replyTo *int) {
-	if replyTo != nil {
-		utils.PurgeCloudflareCache(c, fmt.Sprintf("%s/api/%s/replies/%d", config.Origin, post, *replyTo))
-	} else {
-		utils.PurgeCloudflareCache(c, fmt.Sprintf("%s/api/%s/comments?page=1", config.Origin, post))
-	}
 }

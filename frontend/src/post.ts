@@ -1,5 +1,4 @@
 import "./components/navbar/index.ts";
-import "./components/footer/index.ts";
 import "./components/pagination/index.ts";
 import "./components/create-comment/index.ts";
 import { BlogComment } from "./components/comment/index.ts";
@@ -17,17 +16,21 @@ interface CommentsResult {
 const commentsContainer = document.querySelector("#comments-container");
 const paginationElement = document.querySelector("blog-pagination");
 
-async function getComments(): Promise<CommentsResult> {
-    return await fetch(`/api/post/${postName()}/comments?page=${page}`).then(
+async function getComments(page: number): Promise<CommentsResult> {
+    return await fetch(`/api/post/${postName()}/comments?page=${page}&v=2`).then(
         (x) => x.json(),
     );
 }
 
+let renderRequest = 0;
 async function renderPage(page: number) {
+    const request = ++renderRequest;
     const [{ totalComments, comments }, user] = await Promise.all([
-        getComments(),
+        getComments(page),
         getUser(),
     ]);
+
+    if (request !== renderRequest) return;
 
     commentsContainer?.replaceChildren(
         ...comments.map((comment) =>
@@ -49,14 +52,14 @@ async function renderPage(page: number) {
     );
 }
 
-const page = parseInt(
+let page = parseInt(
     new URL(window.location.href).searchParams.get("page") ?? "1",
     10,
 );
 renderPage(page);
 
 paginationElement?.addEventListener("page-change", (event) => {
-    const page = (event as CustomEvent).detail.page;
+    page = (event as CustomEvent).detail.page;
 
     renderPage(page);
 
@@ -93,6 +96,9 @@ async function getUser(): Promise<User | null> {
 
     if (user) {
         navbar.setAttribute("signed-in", "");
+        createCommentElement
+            .querySelectorAll('[slot="username"]')
+            .forEach((node) => node.remove());
         createCommentElement.addSlot("username", user.name);
         createCommentElement.setUser(user);
         return user;

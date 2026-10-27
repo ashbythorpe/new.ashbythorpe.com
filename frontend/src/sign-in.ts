@@ -1,19 +1,19 @@
 import "./components/navbar/index.ts";
 import "./components/auth-form/index.ts";
-import "./styles/global.css";
-import { getEmail } from "./auth-utils.ts";
+import "./styles/sign-in.css";
+import { setEmail } from "./auth-utils.ts";
 
-const otpForm = document.querySelector("otp-form") as HTMLElement;
+const authForm = document.querySelector("auth-form") as HTMLElement;
 
-const email = getEmail();
-if (email !== null) {
-    otpForm.setAttribute("email", email);
+authForm.addEventListener("verify", (event) => {
+    const email = (event as CustomEvent).detail.email;
 
-    await fetch("/api/auth/send-verification", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-    });
-}
+    setEmail(email);
+
+    const redirect = new URL(window.location.href).searchParams.get("redirect");
+    const url = new URL("/auth/verify-account/", window.location.origin);
+    if (redirect !== null) {
+        url.searchParams.set("redirect", redirect);
+    }
+    window.location.assign(url);
+});

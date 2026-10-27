@@ -1,12 +1,14 @@
 package config
 
 import (
+	"fmt"
+	"net/url"
 	"os"
 	"strconv"
+	"strings"
 )
 
 var (
-	ResendAPIKey             string
 	DBPath                   string
 	Origin                   string
 	GitHubClientID           string
@@ -14,8 +16,6 @@ var (
 	Pepper                   string
 	TurnstileSecret          string
 	InvisibleTurnstileSecret string
-	CloudflareZoneID         string
-	CloudflareAPIToken       string
 	DevMode                  bool
 	Cookies                  CookieNames
 	SMTPHost                 string
@@ -32,13 +32,20 @@ type CookieNames struct {
 }
 
 func Init() error {
-	ResendAPIKey = os.Getenv("RESEND_API_KEY")
+	DevMode = false
+	if value := os.Getenv("DEV"); value != "" {
+		var err error
+		DevMode, err = strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("DEV must be a boolean: %w", err)
+		}
+	}
 	DBPath = os.Getenv("DB_PATH")
 	if DBPath == "" {
 		DBPath = "data/app.db"
 	}
 	Origin = os.Getenv("ORIGIN")
-	if Origin == "" {
+	if Origin == "" && DevMode {
 		Origin = "http://localhost:5173"
 	}
 	GitHubClientID = os.Getenv("GITHUB_CLIENT_ID")
@@ -46,19 +53,47 @@ func Init() error {
 	Pepper = os.Getenv("PEPPER")
 	TurnstileSecret = os.Getenv("TURNSTILE_SECRET_KEY")
 	InvisibleTurnstileSecret = os.Getenv("TURNSTILE_INVISIBLE_SECRET_KEY")
-	CloudflareZoneID = os.Getenv("CLOUDFLARE_ZONE_ID")
-	CloudflareAPIToken = os.Getenv("CLOUDFLARE_API_TOKEN")
 	SMTPHost = os.Getenv("SMTP_HOST")
 
 	var err error
 	SMTPPort, err = strconv.Atoi(os.Getenv("SMTP_PORT"))
-	if err != nil {
-		return err
+	if err != nil || SMTPPort < 1 || SMTPPort > 65535 {
+		return fmt.Errorf("SMTP_PORT must be an integer between 1 and 65535")
 	}
 
 	SMTPUsername = os.Getenv("SMTP_USERNAME")
 	SMTPPassword = os.Getenv("SMTP_PASSWORD")
-	DevMode = os.Getenv("DEV") != ""
+	if SMTPHost == "" {
+		return fmt.Errorf("SMTP_HOST is required")
+	}
+	if (SMTPUsername == "") != (SMTPPassword == "") {
+		return fmt.Errorf("SMTP_USERNAME and SMTP_PASSWORD must be provided together")
+	}
+	u, err := url.Parse(Origin)
+	if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil || u.RawQuery != "" || u.Fragment != "" || (u.Path != "" && u.Path != "/") {
+		return fmt.Errorf("ORIGIN must be an HTTP(S) origin without a path, query, or credentials")
+	}
+	Origin = strings.TrimRight(Origin, "/")
+	if !DevMode {
+		if u.Scheme != "https" {
+			return fmt.Errorf("ORIGIN must use HTTPS in production")
+		}
+		for _, setting := range []struct{ name, value string }{
+			{"GITHUB_CLIENT_ID", GitHubClientID},
+			{"GITHUB_CLIENT_SECRET", GitHubClientSecret},
+			{"TURNSTILE_SECRET_KEY", TurnstileSecret},
+			{"TURNSTILE_INVISIBLE_SECRET_KEY", InvisibleTurnstileSecret},
+			{"SMTP_USERNAME", SMTPUsername},
+			{"SMTP_PASSWORD", SMTPPassword},
+		} {
+			if strings.TrimSpace(setting.value) == "" {
+				return fmt.Errorf("%s is required in production", setting.name)
+			}
+		}
+		if len(Pepper) < 32 {
+			return fmt.Errorf("PEPPER must contain at least 32 bytes in production")
+		}
+	}
 
 	if DevMode {
 		Cookies.Session = "session"

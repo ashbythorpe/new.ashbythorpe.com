@@ -77,7 +77,6 @@ func main() {
 	cfg.Services = append(
 		cfg.Services,
 		db.NewDBCleanupService(db.DB),
-		utils.NewPurgeCacheService(),
 		utils.NewEmailService(),
 	)
 
@@ -88,9 +87,11 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	app.Listen(":3000", fiber.ListenConfig{
+	if err := app.Listen(":3000", fiber.ListenConfig{
 		GracefulContext: ctx,
-	})
+	}); err != nil {
+		log.Fatal(err)
+	}
 
 	log.Info("Server shut down gracefully")
 }

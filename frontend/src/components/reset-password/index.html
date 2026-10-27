@@ -1,9 +1,10 @@
 <link rel="stylesheet" href="style.css" />
-<div class="auth-card">
+<content-card>
   <div class="form-body">
+    <h1>Reset your password</h1>
     <form id="reset-password-form" class="view">
       <div class="input-group">
-        <label for="login-password">New Password</label>
+        <label for="new-password">New Password</label>
         <input
           type="password"
           id="new-password"
@@ -14,7 +15,7 @@
         />
       </div>
       <div class="input-group">
-        <label for="login-password">Confirm Password</label>
+        <label for="confirm-password">Confirm Password</label>
         <input
           type="password"
           id="confirm-password"
@@ -24,13 +25,14 @@
           autocomplete="new-password"
         />
       </div>
-      <slot name="log-in-turnstile"></slot>
       <div>
         <button id="reset-password-submit" type="submit" class="submit-btn">
           Reset Password
         </button>
-        <p id="error" class="error"></p>
+        <p id="error" class="error" role="alert"></p>
       </div>
     </form>
+    <p><a href="/auth/forgot-password/">Request a new reset link</a></p>
+    <p><a href="/auth/sign-in/">Back to sign in</a></p>
   </div>
-</div>
+</content-card>

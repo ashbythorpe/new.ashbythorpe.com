@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="/favicon.ico" />
+    <title>Blog - Page 2</title>
+    <script type="module" src="/src/blog.ts"></script>
+  </head>
+  <body>
+    <div>
+      <nav-bar selected="blog"></nav-bar>
+      <main>
+        <header class="blog-heading"><h1>Blog</h1><img class="blog-art" src="/graphics/blog-fitted-light.svg" alt="" width="768" height="300"></header>
+        <section id="posts" aria-label="Articles">
+        
+            <blog-card href="/post/sample-from-points-to-paths/">
+                <span slot="title">From points to paths</span>
+                <time slot="date" datetime="2026-07-28">28 July 2026</time>
+                <span slot="summary">Turning a cloud of scattered points into a connected structure.</span>
+            </blog-card>
+            
+
+            <blog-card href="/post/sample-on-locality/">
+                <span slot="title">On locality</span>
+                <time slot="date" datetime="2026-07-19">19 July 2026</time>
+                <span slot="summary">Keeping related ideas close together.</span>
+            </blog-card>
+            
+
+            <blog-card href="/post/sample-type-and-texture/">
+                <span slot="title">Type, texture, and the rhythm of a page</span>
+                <time slot="date" datetime="2026-07-10">10 July 2026</time>
+                <span slot="summary">Looking at long headings, short paragraphs and the visual weight of ordinary text on a quiet background.</span>
+            </blog-card>
+            
+
+            <blog-card href="/post/sample-keeping-a-notebook/">
+                <span slot="title">Keeping a notebook</span>
+                <time slot="date" datetime="2026-07-01">1 July 2026</time>
+                <span slot="summary">Small observations become more useful when they have somewhere to live.</span>
+            </blog-card>
+            
+
+            <blog-card href="/post/sample-when-things-fail/">
+                <span slot="title">When things fail</span>
+                <time slot="date" datetime="2026-06-22">22 June 2026</time>
+                <span slot="summary">Making errors understandable enough to act on.</span>
+            </blog-card>
+            
+
+            <blog-card href="/post/sample-a-small-refactor/">
+                <span slot="title">A small refactor</span>
+                <time slot="date" datetime="2026-06-13">13 June 2026</time>
+                <span slot="summary">Changing the shape of a program without changing its purpose.</span>
+            </blog-card>
+            
+
+            <blog-card href="/post/sample-edges-and-openings/">
+                <span slot="title">Edges and openings</span>
+                <time slot="date" datetime="2026-06-04">4 June 2026</time>
+                <span slot="summary">How the empty middle of a drawing can matter as much as its busiest corner.</span>
+            </blog-card>
+            
+
+            <blog-card href="/post/sample-time-in-a-system/">
+                <span slot="title">Time in a system</span>
+                <time slot="date" datetime="2026-05-26">26 May 2026</time>
+                <span slot="summary">Dates, ordering and the surprising complexity of deciding what came first.</span>
+            </blog-card>
+            
+
+            <blog-card href="/post/sample-one-more-iteration/">
+                <span slot="title">One more iteration</span>
+                <time slot="date" datetime="2026-05-17">17 May 2026</time>
+                <span slot="summary">Comparing two versions with a single deliberate change.</span>
+            </blog-card>
+            
+
+            <blog-card href="/post/example/">
+                <span slot="title">AAA aa</span>
+                <time slot="date" datetime="2026-05-11">11 May 2026</time>
+                <span slot="summary">Migrating to Vite 8 with Rolldown</span>
+            </blog-card>
+            
+        <nav class="pagination" aria-label="Blog pages">
+<a href="/blog/" class="pagination-prev" rel="prev">Previous</a>
+<span class="pagination-pages">
+<a href="/blog/" class="pagination-page">1</a>
+<span class="pagination-page current" aria-current="page">2</span>
+<a href="/blog/page/3/" class="pagination-page">3</a>
+</span>
+<a href="/blog/page/3/" class="pagination-next" rel="next">Next</a>
+</nav>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

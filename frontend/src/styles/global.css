@@ -1,8 +1,25 @@
+@font-face {
+  font-family: "New Computer Modern";
+  src: url("/fonts/NewCM10-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "New Computer Modern";
+  src: url("/fonts/NewCM10-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
 :root {
 	--breakpoint-sm: 40rem;
 	--breakpoint-md: 48rem;
 	--breakpoint-lg: 64rem;
 
+  --font-serif: Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 

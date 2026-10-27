@@ -37,7 +37,7 @@ func SetupAuthRoutes(app *fiber.App) {
 	group.Post("/logout", logout)
 	group.Post("/sign-up", loginLimiter, signUp)
 	group.Post("/send-verification", emailLimiter, sendVerification)
-	group.Post("/verify-account/:token", loginLimiter, verifyAccount)
+	group.Post("/verify-account", loginLimiter, verifyAccount)
 	group.Post("/request-password-reset", emailLimiter, requestPasswordReset)
 	group.Post("/reset-password", loginLimiter, resetPassword)
 	group.Get("/user", dontCache, getUser)
@@ -213,9 +213,7 @@ func sendVerification(c fiber.Ctx) error {
 		return err
 	}
 
-	go utils.SendMagicLinkEmail(c, token, data.Email)
-
-	return nil
+	return utils.GetEmailService(c.App()).SendVerificationEmail(token, data.Email)
 }
 
 type ForgotPasswordRequest struct {
@@ -238,12 +236,13 @@ func requestPasswordReset(c fiber.Ctx) error {
 
 	token, err := db.CreatePasswordResetToken(context.WithoutCancel(c.Context()), result.ID)
 	if err != nil {
+		if errors.Is(err, db.ErrExistingToken) {
+			return nil
+		}
 		return err
 	}
 
-	go utils.SendPasswordResetEmail(c, token, req.Email)
-
-	return nil
+	return utils.GetEmailService(c.App()).SendPasswordResetEmail(token, req.Email)
 }
 
 type ResetPasswordSubmit struct {
@@ -257,23 +256,38 @@ func resetPassword(c fiber.Ctx) error {
 		return fiber.ErrBadRequest
 	}
 
+	if req.NewPassword == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Please enter a new password")
+	}
+
 	safeCtx := context.WithoutCancel(c.Context())
 
 	err := db.ChangePassword(safeCtx, req.Token, req.NewPassword)
 	if err != nil {
-		return &utils.AppError{
-			Status:  fiber.StatusBadRequest,
-			Message: "Invalid or expired reset link. Please request a new one.",
+		if errors.Is(err, db.ErrInvalidToken) {
+			return &utils.AppError{
+				Status:  fiber.StatusBadRequest,
+				Message: "Invalid or expired reset link. Please request a new one.",
+			}
 		}
+		return err
 	}
 
 	return nil
 }
 
 func verifyAccount(c fiber.Ctx) error {
-	token := c.Params("token")
-
-	err := db.CheckVerificationToken(c, token)
+	var data struct {
+		Email string `json:"email"`
+		Code  string `json:"code"`
+	}
+	if err := c.Bind().WithAutoHandling().JSON(&data); err != nil {
+		return err
+	}
+	if data.Email == "" || len(data.Code) != 6 {
+		return fiber.ErrBadRequest
+	}
+	err := db.CheckVerificationToken(c, data.Email, data.Code)
 	if err != nil {
 		if errors.Is(err, db.ErrInvalidToken) {
 			return &utils.AppError{

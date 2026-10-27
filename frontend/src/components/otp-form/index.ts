@@ -105,6 +105,7 @@ export default class OtpForm extends Component {
                         errorElement.textContent = e.message;
                     }
 
+                    submitBtn.disabled = false;
                     submitBtn.textContent = "Verify Account";
                     this.#clear();
                     return;
@@ -140,7 +141,7 @@ export default class OtpForm extends Component {
 
             const form = this.select<HTMLFormElement>("#otp-form");
 
-            form.submit();
+            form.requestSubmit();
         }
     }
 
@@ -176,11 +177,12 @@ export default class OtpForm extends Component {
     async #submitCode(code: string) {
         let result;
         try {
-            result = await fetch(`/api/auth/verify-account/${code}`, {
+            result = await fetch("/api/auth/verify-account", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
+                body: JSON.stringify({ email: this.#email, code }),
             });
         } catch (e) {
             throw new Error("Network error");
@@ -205,7 +207,6 @@ export default class OtpForm extends Component {
         submitBtn.disabled = false;
         submitBtn.textContent = "Verify Account";
 
-        // Clear inputs and refocus the first one
         this.#inputs.forEach((input) => (input.value = ""));
         this.#inputs[0].focus();
     }

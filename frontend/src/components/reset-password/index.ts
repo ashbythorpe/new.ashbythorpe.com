@@ -1,14 +1,19 @@
+import "../content-card/index.ts";
 import { Component, element, staticElement } from "../../custom-elements";
 
 @element("reset-password", "./index.html")
 @staticElement
-export default class AuthForm extends Component {
+export default class ResetPasswordForm extends Component {
     #token!: string;
 
     connectedCallback(): void {
-        this.#setupEventListeners();
         this.#token =
             new URL(window.location.href).searchParams.get("token") ?? "";
+        this.#setupEventListeners();
+        if (!this.#token) {
+            this.select("#error").textContent = "Missing reset link. Please request a new one.";
+            this.select<HTMLButtonElement>("#reset-password-submit").disabled = true;
+        }
     }
 
     // --- Events ---
@@ -20,6 +25,7 @@ export default class AuthForm extends Component {
         loginForm.addEventListener("submit", async (e) => {
             e.preventDefault();
 
+            if (!this.#token || this.select<HTMLButtonElement>("#reset-password-submit").disabled) return;
             if (!loginForm.checkValidity()) {
                 loginForm.reportValidity();
                 return;
@@ -29,6 +35,7 @@ export default class AuthForm extends Component {
             const submitButton = this.select<HTMLButtonElement>(
                 "#reset-password-submit",
             );
+            errorElement.textContent = "";
             submitButton.disabled = true;
 
             const newPassword = newPasswordElement.value;
@@ -39,8 +46,10 @@ export default class AuthForm extends Component {
                 submitButton.disabled = false;
                 if (error instanceof Error) {
                     errorElement.textContent = error.message;
-                    return;
+                } else {
+                    errorElement.textContent = "Could not reset your password. Please try again.";
                 }
+                return;
             }
 
             window.location.assign("/auth/sign-in/?success=reset_password");
@@ -49,7 +58,7 @@ export default class AuthForm extends Component {
         const confirmPasswordElement =
             this.select<HTMLInputElement>("#confirm-password");
 
-        confirmPasswordElement.addEventListener("input", () => {
+        const validateConfirmation = () => {
             if (newPasswordElement.value !== confirmPasswordElement.value) {
                 confirmPasswordElement.setCustomValidity(
                     "Passwords do not match",
@@ -57,7 +66,9 @@ export default class AuthForm extends Component {
             } else {
                 confirmPasswordElement.setCustomValidity("");
             }
-        });
+        };
+        confirmPasswordElement.addEventListener("input", validateConfirmation);
+        newPasswordElement.addEventListener("input", validateConfirmation);
     }
 
     async #resetPassword(newPassword: string) {
@@ -79,10 +90,10 @@ export default class AuthForm extends Component {
         }
 
         if (!response.ok) {
-            const error = await response.json();
-            console.error(error);
-
-            throw new Error(error.message);
+            const error = await response.json().catch(() => null);
+            throw new Error(response.status === 429
+                ? "Too many requests. Please wait a minute and try again."
+                : error?.message ?? "Could not reset your password. Please try again.");
         }
     }
 }

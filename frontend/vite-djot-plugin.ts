@@ -112,7 +112,7 @@ export function djotPlugin(options: PluginOptions): Plugin {
                 const postsPerPage = blogIndex.postsPerPage ?? 10;
                 const postsDir = resolve(root, blogIndex.postsDir);
                 const blogPostCount = djotFiles.filter((f) =>
-                    f.startsWith(postsDir),
+                    resolve(f).startsWith(postsDir + "/"),
                 ).length;
                 const totalPages = Math.max(
                     1,
@@ -449,10 +449,23 @@ async function buildDjotFile(
     header += `<h1>${title}</h1>`;
     header += `<p class="post-summary">${meta.summary}</p>`;
 
+    // The R script exports art by post URL. New posts use the shared artwork
+    // until graphics are regenerated, so publishing never requires R.
+    const artKey = relative(resolve(root, "post"), resolvedPath)
+        .replaceAll("\\", "/")
+        .replace(/(^|\/)index\.dj$/, "")
+        .replace(/\.dj$/, "");
+    const artworkPath = `graphics/posts/${artKey}.svg`;
+    const artworkExists = await stat(resolve(root, "public", artworkPath))
+        .then((info) => info.isFile())
+        .catch(() => false);
+    const artwork = artworkExists ? `/${artworkPath}` : "/graphics/article.svg";
+
     const finalHtml = template
         .replaceAll("{{TITLE}}", title)
         .replaceAll("{{HEADER}}", header)
-        .replaceAll("{{CONTENT}}", html);
+        .replaceAll("{{CONTENT}}", html)
+        .replaceAll("{{ARTWORK}}", artwork);
 
     const htmlPath = resolvedPath.replace(/\.dj$/, ".html");
     await writeFile(htmlPath, finalHtml);

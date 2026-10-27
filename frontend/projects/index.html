@@ -10,69 +10,57 @@
   <body>
     <nav-bar selected="projects"></nav-bar>
     <main>
-      <div class="projects-header">
-        <h1 class="projects-title">Projects</h1>
-        <p class="projects-subtitle">
-          This is an array of open source projects I've worked on
-          independently over the past few years.
-        </p>
-      </div>
-
-      <div class="projects-container">
-        <div class="projects-column">
-          <project-card href="https://ashbythorpe.github.io/selenider/" position="1">
-            <span slot="title">selenider</span>
-            <span slot="description">
-              A semi-popular R package to facilitate high level browser
-              automation, using Selenium and the Chrome Devtools Protocol.
-            </span>
-          </project-card>
-
-          <project-card href="https://ashbythorpe.github.io/selenium-r/" position="2">
-            <span slot="title">selenium-r</span>
-            <span slot="description">
-              Interface to Selenium from R.
-            </span>
-          </project-card>
-
-          <project-card href="https://github.com/ashbythorpe/financialDataAnalysis" position="3">
-            <span slot="title">financialDataAnalysis</span>
-            <span slot="description">
-              A website made using Shiny, to analyze, forecast and visualise
-              financial data.
-            </span>
-          </project-card>
+      <header class="projects-header">
+        <h1>Projects</h1>
+        <p>Open source projects and experiments.</p>
+      </header>
+      <div class="projects-orbit">
+        <div class="network">
+          <img class="project-network" src="/graphics/projects-tall.svg" alt="" width="480" height="557">
         </div>
-
-        <div class="projects-column">
-          <project-card href="https://ashbythorpe.github.io/nestedmodels/" position="1">
-            <span slot="title">nestedmodels</span>
-            <span slot="description">
-              An R package, enhancing the tidymodels framework to support the
-              modelling of nested data.
-            </span>
-          </project-card>
-
-          <project-card href="https://github.com/ashbythorpe/ashbythorpe.com" position="2">
-            <span slot="title">ashbythorpe.com</span>
-            <span slot="description">
-              This website! Made using React and Next.js. Includes a fully
-              functional login and comment system.
-            </span>
-          </project-card>
-
-          <project-card href="https://github.com/ashbythorpe/r-analyzer" position="3">
-            <span slot="title">r-analyzer</span>
-            <span slot="description">
-              A (soon-to-be) implementation of the Language Server Protocol for
-              R, written in Rust. Currently consists of a hand-written
-              fault-tolerant Pratt parser.
-            </span>
-          </project-card>
-        </div>
+        <a class="project project-0" href="https://ashbythorpe.github.io/selenider/">
+          <div class="project-heading">
+            <h2>selenider</h2>
+            <span class="project-languages">R</span>
+          </div>
+          <p>High-level browser automation with Selenium and the Chrome DevTools Protocol.</p>
+        </a>
+        <a class="project project-1" href="https://ashbythorpe.github.io/selenium-r/">
+          <div class="project-heading">
+            <h2>selenium-r</h2>
+            <span class="project-languages">R</span>
+          </div>
+          <p>An interface to Selenium from R.</p>
+        </a>
+        <a class="project project-2" href="https://github.com/ashbythorpe/financialDataAnalysis">
+          <div class="project-heading">
+            <h2>financialDataAnalysis</h2>
+            <span class="project-languages">R</span>
+          </div>
+          <p>Analyse, forecast and visualise financial data.</p>
+        </a>
+        <a class="project project-3" href="https://ashbythorpe.github.io/nestedmodels/">
+          <div class="project-heading">
+            <h2>nestedmodels</h2>
+            <span class="project-languages">R</span>
+          </div>
+          <p>Model nested data with the tidymodels framework.</p>
+        </a>
+        <a class="project project-4" href="https://github.com/ashbythorpe/ashbythorpe.com">
+          <div class="project-heading">
+            <h2>ashbythorpe.com</h2>
+            <span class="project-languages">TypeScript, Go</span>
+          </div>
+          <p>This website, including its account and comment system.</p>
+        </a>
+        <a class="project project-5" href="https://github.com/ashbythorpe/r-analyzer">
+          <div class="project-heading">
+            <h2>r-analyzer</h2>
+            <span class="project-languages">Rust</span>
+          </div>
+          <p>A foundation for R language tooling, with a fault-tolerant Pratt parser.</p>
+        </a>
       </div>
-      <include src="../src/icons/stars.svg" id="star-pattern">
     </main>
-    <footer-element></footer-element>
   </body>
 </html>

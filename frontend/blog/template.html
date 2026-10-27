@@ -10,11 +10,13 @@
   <body>
     <div>
       <nav-bar selected="blog"></nav-bar>
-      <main id="posts">
+      <main>
+        <header class="blog-heading"><h1>Blog</h1><img class="blog-art" src="/graphics/blog-fitted-light.svg" alt="" width="768" height="300"></header>
+        <section id="posts" aria-label="Articles">
         {{POST_LIST}}
         {{PAGINATION}}
-      </div>
+        </section>
+      </main>
     </div>
-    <footer-element></footer-element>
   </body>
 </html>

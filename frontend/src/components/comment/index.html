@@ -1,11 +1,15 @@
 <link rel="stylesheet" href="style.css" />
 <div class="container group">
+  <div class="meta-row content">
+    <slot name="author"></slot>
+    <slot name="time"></slot>
+  </div>
   <div class="top-row content">
     <div class="content-area">
-      <p class="content-text line-clamp">
+      <div class="content-text">
         <slot name="reply-link"></slot>
         <comment-content></comment-content>
-      </p>
+      </div>
     </div>
 
     <div class="actions">
@@ -40,6 +44,7 @@
       id="edit-input"
       class="edit-input"
       placeholder="Update your comment..."
+      aria-label="Edit your comment"
     ></textarea>
     <div class="edit-actions">
       <button id="cancel-edit-btn" class="btn-action btn-cancel">Cancel</button>
@@ -47,10 +52,7 @@
     </div>
   </div>
 
-  <div class="meta-row content">
-    <slot name="author"></slot>
-    <slot name="time"></slot>
-  </div>
+
 
   <slot name="replies"></slot>
 </div>

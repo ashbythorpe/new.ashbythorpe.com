@@ -1,5 +1,5 @@
 import type { Plugin } from "vite";
-import { access, constants, readFile } from "node:fs/promises";
+import { access, constants, readFile, readdir } from "node:fs/promises";
 import { resolve } from "path";
 import ts from "typescript";
 import { HTMLElement, parse } from "node-html-parser";
@@ -146,6 +146,27 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
             isDev = config.command === "serve";
         },
 
+        async buildStart() {
+            // HTML can be requested before any component module is transformed.
+            // Populate the SSR registry independently of browser request order.
+            const sourceDir = resolve(root, "src");
+            const files = await readdir(sourceDir, { recursive: true });
+            for (const file of files) {
+                if (!/\.(ts|js)$/.test(file)) continue;
+                const sourceFile = resolve(sourceDir, file);
+                const code = await readFile(sourceFile, "utf-8");
+                for (const element of parseElementDecorators(code, sourceFile)) {
+                    const bundle = await createComponentBundle(element, sourceFile);
+                    componentBundles.set(element.name, bundle);
+                    this.addWatchFile(sourceFile);
+                    this.addWatchFile(bundle.templatePath);
+                    for (const dependency of bundle.cssFiles) {
+                        this.addWatchFile(dependency);
+                    }
+                }
+            }
+        },
+
         transform: {
             order: "pre",
             async handler(code, id) {
@@ -167,27 +188,15 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                     const cssVarName = toCamelCase(element.name) + "Css";
 
                     if (!element.static || isDev) {
-                        if (element.static) {
-                            // Static elements only need the template string (for dev HMR);
-                            // no CSS import since adoptedStyleSheets is never used.
-                            imports.push(
-                                `import { template as ${templateVarName} } from "${templateId}";`,
-                            );
-                        } else {
-                            // Non-static elements import both — template for the fallback
-                            // dynamic-attach path, css for adoptedStyleSheets.
-                            imports.push(
-                                `import { template as ${templateVarName}, css as ${cssVarName} } from "${templateId}";`,
-                            );
-                        }
-                    }
-
-                    if (!element.static || isDev) {
-                        const injected = element.static
-                            ? `\n    static __templateString = ${templateVarName};\n`
-                            : `\n    static __templateString = ${templateVarName};\n    static __cssText = ${cssVarName};\n`;
-
-                        s.appendLeft(element.classNode.members.pos, injected);
+                        // Static components also need a CSS fallback in development
+                        // when the browser constructs a root without SSR markup.
+                        imports.push(
+                            `import { template as ${templateVarName}, css as ${cssVarName} } from "${templateId}";`,
+                        );
+                        s.appendLeft(
+                            element.classNode.members.pos,
+                            `\n    static __templateString = ${templateVarName};\n    static __cssText = ${cssVarName};\n`,
+                        );
                     }
 
                     this.addWatchFile(bundle.templatePath);
@@ -237,7 +246,7 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
                 // the client uses for dynamic construction, where adoptedStyleSheets
                 // supplies the styles. The full template (with <style> tags) is only
                 // ever used server-side in transformIndexHtml and is never shipped to
-                // the client. Static elements never import `css`, so it is tree-shaken.
+                // the client. Production static elements never import `css`, so it is tree-shaken.
                 const res = [
                     `export const template = ${JSON.stringify(bundle.templateString)};`,
                     `export const css = ${JSON.stringify(bundle.cssText)};`,
@@ -328,28 +337,39 @@ export function customElementsPlugin(options: PluginOptions = {}): Plugin {
         },
 
         async handleHotUpdate(ctx) {
-            for (const [name, bundle] of componentBundles) {
-                const shouldReload =
-                    bundle.templatePath === ctx.file ||
-                    bundle.cssFiles.has(ctx.file);
+            const affected = [...componentBundles.values()].filter(
+                (bundle) => bundle.sourceFile === ctx.file ||
+                    bundle.templatePath === ctx.file || bundle.cssFiles.has(ctx.file),
+            );
+            if (affected.length === 0) return;
 
-                if (shouldReload) {
-                    await reloadBundle(bundle);
-
-                    const templateModule = ctx.server.moduleGraph.getModuleById(
-                        `virtual:template:${name}`,
-                    );
-
-                    if (templateModule)
-                        await ctx.server.reloadModule(templateModule);
-
-                    const componentModule =
-                        ctx.server.moduleGraph.getModuleById(bundle.sourceFile);
-                    if (componentModule) {
-                        await ctx.server.reloadModule(componentModule);
+            // Finish rebuilding every shared dependency before allowing a new
+            // HTML request. Per-module reloads can race with this rebuild.
+            for (const bundle of affected) {
+                if (bundle.sourceFile === ctx.file) {
+                    const code = await ctx.read();
+                    componentBundles.delete(bundle.name);
+                    for (const element of parseElementDecorators(code, ctx.file)) {
+                        const updated = await createComponentBundle(element, ctx.file);
+                        componentBundles.set(element.name, updated);
                     }
+                } else {
+                    await reloadBundle(bundle);
                 }
             }
+
+            const modules = new Set(ctx.modules);
+            for (const bundle of affected) {
+                for (const id of [bundle.sourceFile, `virtual:template:${bundle.name}`]) {
+                    const mod = ctx.server.moduleGraph.getModuleById(id);
+                    if (mod) modules.add(mod);
+                }
+            }
+            for (const mod of modules) {
+                ctx.server.moduleGraph.invalidateModule(mod);
+            }
+            ctx.server.ws.send({ type: "full-reload" });
+            return [];
         },
     };
 

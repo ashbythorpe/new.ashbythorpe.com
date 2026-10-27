@@ -195,3 +195,23 @@
   margin-right: calc(1rem - 8px);
   font-size: 1rem;
 }
+
+/* Match the article's typography and quiet rules. */
+:host { margin: 0; padding-block: 1.25rem; border-bottom: 1px solid var(--color-black-200); color: var(--color-black-800); }
+.container { gap: 0.75rem; min-width: 0; }
+.meta-row { margin: 0; justify-content: flex-start; align-items: baseline; flex-wrap: wrap; gap: 0.75rem; color: var(--color-black-500); font: 0.75rem/1.5 var(--font-inter); }
+::slotted([slot="author"]) { color: var(--color-black-900); font-weight: 600; font-size: 0.875rem; }
+.top-row { flex-direction: column; gap: 0.5rem; min-width: 0; }
+.content-area { display: block; min-width: 0; }
+.content-text { width: 100%; font: 1rem/1.7 var(--font-serif); }
+.actions { flex-wrap: wrap; }
+.btn { width: 2.75rem; height: 2.75rem; border-radius: 2px; color: var(--color-black-500); }
+.btn:hover { background: var(--color-cerise-red-50); color: var(--color-cerise-red-700); }
+.btn-delete:hover { color: var(--color-cerise-red-800); }
+.btn:focus-visible, .btn-action:focus-visible, .edit-input:focus-visible { outline: 2px solid var(--color-cerise-red-700); outline-offset: 3px; }
+.edit-input { min-height: 8rem; border-color: var(--color-black-300); border-radius: 2px; padding: 0.875rem; font: 1rem/1.65 var(--font-serif); }
+.edit-input:focus { outline-color: var(--color-cerise-red-700); }
+.btn-action { min-height: 2.75rem; border-radius: 2px; font-family: var(--font-inter); }
+.btn-save { background: var(--color-cerise-red-700); }
+.btn-save:hover { background: var(--color-cerise-red-800); }
+.btn-cancel { background: var(--color-black-100); color: var(--color-black-700); }

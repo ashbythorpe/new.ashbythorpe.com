@@ -36,3 +36,9 @@
 #replies-list {
   padding-left: 1rem;
 }
+
+:host { display: block; }
+#show-replies { min-height: 2.75rem; margin-top: 0; }
+#show-replies:focus-visible { outline: 2px solid var(--color-cerise-red-700); outline-offset: 3px; }
+.replies-label { justify-content: flex-start; color: var(--color-cerise-red-700); font-family: var(--font-inter); }
+#replies-list { margin: 0 0 1.25rem; padding: 0.75rem 0 0 clamp(0.75rem, 4vw, 1.5rem); border-left: 1px solid var(--color-black-300); }

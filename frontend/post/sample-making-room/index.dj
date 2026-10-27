@@ -1,0 +1,31 @@
+{date="2026-09-11" summary="A short note about margins."}
+# Making room
+
+This is a sample post for previewing the blog layout and its generated network artwork.
+
+A short note about margins.
+
+## A closer look
+
+A useful experiment starts with something small enough to inspect. Change one
+part, keep the rest steady, and take a moment to look at what happened. Sometimes
+the most interesting detail is a gap, a cluster, or a connection that was easy
+to miss at first.
+
+The network above belongs to this post's URL. Its arrangement should stay the
+same when you reload this page, while other sample posts have their own shapes,
+colours and spacing. Open a few articles to compare their silhouettes.
+
+## Notes from the experiment
+
+- Look at how the title wraps on a narrow screen.
+- Compare the density of branches on either side of the heading.
+- Follow the article back to the listing and try another sample.
+
+> A small change is easier to understand when there is something steady to compare it with.
+
+## Next steps
+
+These paragraphs are placeholder content for checking reading width, heading
+spacing and the transition from the illustration into the article. They can be
+removed along with the other posts whose directory names start with `sample-`.

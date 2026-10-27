@@ -422,3 +422,12 @@ mtable.tml-small mtd {
 body {
   counter-reset: tmlEqnNo;
 }
+
+:host { display: block; }
+#content { line-height: 1.7; }
+#content > :first-child { margin-top: 0; }
+#content > :last-child { margin-bottom: 0; }
+a { color: var(--color-cerise-red-700); text-underline-offset: 0.2em; }
+a:focus-visible { outline: 2px solid var(--color-cerise-red-700); outline-offset: 3px; }
+pre { overflow-x: auto; padding: 0.75rem; background: var(--color-black-50); }
+code, pre { font-family: var(--font-mono); font-size: 0.875em; }

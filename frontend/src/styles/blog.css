@@ -1,11 +1,17 @@
 @import "global.css";
 
-body {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+body { min-height: 100vh; display: flex; flex-direction: column; }
+body > div { flex: 1; }
+main { max-width: 46rem; margin: auto; padding: clamp(2rem, 5vw, 4rem) 1.5rem; }
+.blog-heading { position: relative; isolation: isolate; container-type: inline-size; width: min(100%, 30rem); margin: 0 auto 2.5rem; text-align: center; }
+.blog-heading h1 { position: relative; top: 0.05em; z-index: 1; margin: 0; font-size: 20cqw; line-height: 1.1; }
+h1 { font: 400 clamp(4rem, 10vw, 6rem)/1.1 var(--font-serif); }
+#posts { border-top: 1px solid var(--color-black-300); }
+blog-card { --article-accent: var(--color-cerise-red-700); }
+.pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 2rem; font: 0.875rem var(--font-inter); }
+.pagination-pages { display: flex; gap: 1rem; }
+.pagination a { color: var(--color-indigo-700); text-underline-offset: 0.25rem; }
+.pagination .disabled { color: var(--color-black-500); }
+.pagination .current { font-weight: 700; }
 
-footer-element {
-  margin-top: auto;
-}
+.blog-art { position: relative; z-index: 0; display: block; width: 100%; height: auto; margin-top: -20cqw; pointer-events: none; }

@@ -5,29 +5,50 @@ on:
     branches:
       - main
 
+concurrency:
+  group: oracle-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: ssh and deploy
         uses: appleboy/ssh-action@v1
+        env:
+          DEPLOY_SHA: ${{ github.sha }}
         with:
           host: ${{ secrets.ORACLE_HOST }}
           username: opc
           key: ${{ secrets.ORACLE_SSH_KEY }}
+          envs: DEPLOY_SHA
+          command_timeout: 30m
           script: |
+            set -eu
             cd ~/ashbythorpe.com
 
-            git pull origin main
+            git fetch origin "$DEPLOY_SHA"
+            git checkout --detach "$DEPLOY_SHA"
+            test "$(git rev-parse HEAD)" = "$DEPLOY_SHA"
 
             cd backend
 
             mkdir -p ~/.config/containers/systemd/
 
-            cp ./containers/* ~/.config/containers/systemd/
+            podman build --label "org.opencontainers.image.revision=$DEPLOY_SHA" -t localhost/ashbythorpe-backend:latest .
 
-            podman build -t localhost/ashbythorpe-backend:latest .
+            if ! podman secret inspect otp-pepper >/dev/null 2>&1; then
+              otp_pepper="$(openssl rand -hex 32)"
+              printf '%s' "$otp_pepper" | podman secret create otp-pepper -
+              unset otp_pepper
+            fi
+
+            cp ./containers/* ~/.config/containers/systemd/
 
             systemctl --user daemon-reload
 
-            systemctl --user restart web tunnel
+            systemctl --user restart litestream web tunnel
+
+            systemctl --user is-active --quiet web tunnel litestream
+            test "$(podman inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' web)" = "$DEPLOY_SHA"
+            podman exec web /usr/local/bin/run-app healthcheck

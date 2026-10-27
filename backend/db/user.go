@@ -88,7 +88,7 @@ func CreateUserFromOAuth(ctx context.Context, provider string, providerID string
 
 	_, err = tx.ExecContext(
 		ctx, `
-		INSERT INTO users (id, email, name) VALUES (?, ?, ?)
+		INSERT INTO users (id, email, name, verified) VALUES (?, ?, ?, TRUE)
 		`, id[:], email, name,
 	)
 	if err != nil {
@@ -116,30 +116,44 @@ func CreateUserFromOAuth(ctx context.Context, provider string, providerID string
 	return id, nil
 }
 
+// HandleOAuthResult accepts an email already verified by the OAuth provider.
+// Matching local accounts must independently be verified before they can link.
 func HandleOAuthResult(ctx context.Context, provider string, providerID string, name string, email string) (uuid.UUID, error) {
 	var userID uuid.UUID
-	log.Info(provider, " - ", providerID)
-	err := DB.QueryRowContext(ctx, "SELECT user_id FROM user_oauth WHERE provider = ? AND provider_id = ?", provider, providerID).Scan(&userID)
-
+	var verified bool
+	err := DB.QueryRowContext(ctx, `
+		SELECT users.id, users.verified
+		FROM user_oauth JOIN users ON users.id = user_oauth.user_id
+		WHERE provider = ? AND provider_id = ?
+	`, provider, providerID).Scan(&userID, &verified)
 	if err == nil {
+		if !verified {
+			return uuid.Nil, ErrUnverifiedAccount
+		}
 		return userID, nil
-	} else if !errors.Is(err, sql.ErrNoRows) {
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
 		return uuid.Nil, err
 	}
 
-	log.Info("Um...")
-
-	err = DB.QueryRowContext(ctx, "SELECT id FROM users WHERE email = ?", email).Scan(&userID)
-
+	err = DB.QueryRowContext(ctx, "SELECT id, verified FROM users WHERE email = ?", email).Scan(&userID, &verified)
 	if err == nil {
-		_, err := DB.ExecContext(
-			ctx,
-			`INSERT INTO user_oauth (provider, provider_id, user_id) VALUES (?, ?, ?)`,
-			provider, providerID, userID[:],
-		)
-
+		if !verified {
+			return uuid.Nil, ErrUnverifiedAccount
+		}
+		// Enforce verification again in the write so the eligibility check
+		// and creation of the link cannot disagree.
+		err = DB.QueryRowContext(ctx, `
+			INSERT INTO user_oauth (provider, provider_id, user_id)
+			SELECT ?, ?, id FROM users WHERE id = ? AND verified = TRUE
+			RETURNING user_id
+		`, provider, providerID, userID[:]).Scan(&userID)
+		if errors.Is(err, sql.ErrNoRows) {
+			return uuid.Nil, ErrUnverifiedAccount
+		}
 		return userID, err
-	} else if !errors.Is(err, sql.ErrNoRows) {
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
 		return uuid.Nil, err
 	}
 
@@ -150,6 +164,7 @@ var (
 	ErrInvalidEmail       = errors.New("invalid email")
 	ErrInvalidPassword    = errors.New("invalid password")
 	ErrEmailAlreadyExists = errors.New("email already exists")
+	ErrUnverifiedAccount  = errors.New("existing account is not verified")
 )
 
 type UserResult struct {

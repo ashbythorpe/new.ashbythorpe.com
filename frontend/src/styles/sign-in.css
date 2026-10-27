@@ -1,3 +1,13 @@
-.hidden {
-  display: none;
+@import "global.css";
+body { min-height: 100vh; background: linear-gradient(135deg, var(--color-cerise-red-50), var(--color-energy-yellow-50) 55%, var(--color-indigo-50)); }
+main { max-width: 72rem; min-height: calc(100svh - 3.5rem); margin: auto; padding: clamp(1.25rem, 3vh, 3rem) 1.5rem; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(2rem, 6vw, 6rem); align-items: center; }
+.back-link { display: inline-block; color: var(--color-black-600); font: 0.8rem var(--font-inter); text-underline-offset: 0.3rem; margin-bottom: 3rem; }
+
+.auth-intro { position: relative; align-self: stretch; min-width: 0; display: flex; flex-direction: column; }
+.auth-intro > .back-link { position: absolute; top: 0; left: 0; margin-bottom: 0; }
+.account-art { width: 100%; height: auto; max-height: 38rem; margin: auto; align-self: center; object-fit: contain; object-position: center; }
+@media (max-width: 48rem) {
+  main { min-height: 0; grid-template-columns: 1fr; max-width: 34rem; gap: 1.5rem; }
+  .auth-intro > .back-link { position: static; align-self: flex-start; margin-bottom: 0; }
+  .account-art { display: none; }
 }

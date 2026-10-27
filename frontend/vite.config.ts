@@ -57,7 +57,7 @@ export default defineConfig(({ command }) => {
                 languages: ["typescript", "javascript", "prisma"],
                 template: "post/template.html",
                 blogIndex: {
-                    postsDir: "blog",
+                    postsDir: "post",
                     template: "blog/template.html",
                     outputDir: "blog",
                     postsPerPage: 10,
@@ -81,6 +81,10 @@ export default defineConfig(({ command }) => {
                     "auth/sign-in": resolve(
                         __dirname,
                         "./auth/sign-in/index.html",
+                    ),
+                    "auth/forgot-password": resolve(
+                        __dirname,
+                        "./auth/forgot-password/index.html",
                     ),
                     "auth/reset-password": resolve(
                         __dirname,

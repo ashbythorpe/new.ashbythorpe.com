@@ -5,32 +5,11 @@ export function authRedirect() {
     const redirect = new URL(redirectParam, window.location.origin);
 
     if (redirect.origin !== window.location.origin) {
-        throw new Error("Invalid redirect");
+        console.error("Invalid redirect");
+        window.location.assign("/blog/")
     }
 
     window.location.assign(redirect);
-}
-
-export async function sendVerificationEmail(email: string): Promise<boolean> {
-    const result = await fetch("/auth/resend-verification", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-    });
-
-    if (!result.ok) {
-        const body = await result.json();
-
-        if (body.type === "existing-token") {
-            return false;
-        } else {
-            throw new Error(body.message);
-        }
-    }
-
-    return true;
 }
 
 export function setEmail(email: string) {

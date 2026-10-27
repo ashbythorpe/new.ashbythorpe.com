@@ -34,15 +34,12 @@ export class BlogComment extends Component {
         element.id = `comment-${id}`;
         element.setAttribute("comment-id", String(id));
 
-        if (author.id) {
-            element.internals.states.add("owned");
-        }
+        element.owned = userID !== null && author.id === userID;
 
         element.#content = content;
         // Wait for <comment-content> to be resolved
         setTimeout(() => element.#renderContent());
 
-        console.log(replyTo, originalReplyTo);
         if (replyTo !== undefined) {
             const replyAnchor = document.createElement("a");
             replyAnchor.href = `#comment-${replyTo.id}`;
@@ -64,12 +61,8 @@ export class BlogComment extends Component {
 
     async #renderContent() {
         const contentElement = this.select("comment-content") as CommentContent;
-        console.log(contentElement.constructor);
-        console.log(contentElement instanceof CommentContent);
-        console.log(typeof contentElement);
         contentElement.setContent(this.#content);
 
-        console.log(contentElement);
         const rendered = await renderComment(this.#content);
         contentElement.setContent(rendered);
     }
@@ -90,7 +83,6 @@ export class BlogComment extends Component {
     connectedCallback(): void {
         const self_link = this.select<HTMLButtonElement>("#self-link");
         self_link.addEventListener("click", async () => {
-            console.log("Disabling");
             self_link.disabled = true;
 
             const url = new URL(

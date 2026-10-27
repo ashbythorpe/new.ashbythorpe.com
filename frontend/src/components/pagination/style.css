@@ -56,3 +56,9 @@ svg {
   width: 1rem; /* w-4 */
   height: 1rem;
 }
+
+/* Post discussions use the same understated navigation as the blog. */
+.page-item { border-radius: 2px; font: 0.875rem var(--font-inter); }
+a.page-item:hover { background: var(--color-cerise-red-50); color: var(--color-cerise-red-700); }
+a.page-item:focus-visible { outline: 2px solid var(--color-cerise-red-700); outline-offset: 2px; }
+.page-item.active { background: var(--color-cerise-red-700); color: white; }

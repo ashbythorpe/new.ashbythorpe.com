@@ -10,17 +10,90 @@
   <body>
     <div>
       <nav-bar selected="blog"></nav-bar>
-      <main id="posts">
-        
-            <blog-card href="/post/example/">
-                <span slot="title">AAA aa</span>
-                <time slot="date" datetime="2026-05-11">11 May 2026</time>
-                <span slot="summary">Migrating to Vite 8 with Rolldown</span>
+      <main>
+        <header class="blog-heading"><h1>Blog</h1><img class="blog-art" src="/graphics/blog-fitted-light.svg" alt="" width="768" height="300"></header>
+        <section id="posts" aria-label="Articles">
+
+            <blog-card href="/post/sample-small-tools/">
+                <span slot="title">Small tools</span>
+                <time slot="date" datetime="2026-10-26">26 October 2026</time>
+                <span slot="summary">A few thoughts on programs that do one thing well.</span>
             </blog-card>
-            
-        
-      </div>
+
+
+            <blog-card href="/post/sample-shape-of-randomness/">
+                <span slot="title">The shape of randomness</span>
+                <time slot="date" datetime="2026-10-17">17 October 2026</time>
+                <span slot="summary">What changes when the same rules are given a different starting point?</span>
+            </blog-card>
+
+
+            <blog-card href="/post/sample-quiet-interfaces/">
+                <span slot="title">Quiet interfaces</span>
+                <time slot="date" datetime="2026-10-08">8 October 2026</time>
+                <span slot="summary">Leaving enough space for the useful parts of a page to speak.</span>
+            </blog-card>
+
+
+            <blog-card href="/post/sample-walking-a-graph/">
+                <span slot="title">Walking a graph, one edge at a time</span>
+                <time slot="date" datetime="2026-09-29">29 September 2026</time>
+                <span slot="summary">Following a network from its centre to its furthest leaves, with a few detours along the way.</span>
+            </blog-card>
+
+
+            <blog-card href="/post/sample-working-with-colour/">
+                <span slot="title">Working with colour</span>
+                <time slot="date" datetime="2026-09-20">20 September 2026</time>
+                <span slot="summary">Notes on rose, gold, violet and the spaces between them.</span>
+            </blog-card>
+
+
+            <blog-card href="/post/sample-making-room/">
+                <span slot="title">Making room</span>
+                <time slot="date" datetime="2026-09-11">11 September 2026</time>
+                <span slot="summary">A short note about margins.</span>
+            </blog-card>
+
+
+            <blog-card href="/post/sample-repeatable-experiments/">
+                <span slot="title">Repeatable experiments in generative graphics</span>
+                <time slot="date" datetime="2026-09-02">2 September 2026</time>
+                <span slot="summary">Random seeds make it possible to revisit a composition, compare small changes, and keep the parts that work.</span>
+            </blog-card>
+
+
+            <blog-card href="/post/sample-little-state-machines/">
+                <span slot="title">Little state machines</span>
+                <time slot="date" datetime="2026-08-24">24 August 2026</time>
+                <span slot="summary">Thinking through a user interface as a handful of explicit transitions.</span>
+            </blog-card>
+
+
+            <blog-card href="/post/sample-a-better-default/">
+                <span slot="title">A better default</span>
+                <time slot="date" datetime="2026-08-15">15 August 2026</time>
+                <span slot="summary">The small decisions that make a tool pleasant before anyone opens its settings.</span>
+            </blog-card>
+
+
+            <blog-card href="/post/sample-reading-code/">
+                <span slot="title">Reading code slowly</span>
+                <time slot="date" datetime="2026-08-06">6 August 2026</time>
+                <span slot="summary">A notebook, a question, and a function worth understanding.</span>
+            </blog-card>
+
+        <nav class="pagination" aria-label="Blog pages">
+<span class="pagination-prev disabled" aria-disabled="true">Previous</span>
+<span class="pagination-pages">
+<span class="pagination-page current" aria-current="page">1</span>
+<a href="/blog/page/2/" class="pagination-page">2</a>
+<a href="/blog/page/3/" class="pagination-page">3</a>
+</span>
+<a href="/blog/page/2/" class="pagination-next" rel="next">Next</a>
+</nav>
+        </section>
+      </main>
     </div>
-    <footer-element></footer-element>
   </body>
 </html>

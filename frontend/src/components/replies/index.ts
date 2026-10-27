@@ -47,7 +47,7 @@ export class ReplyList extends Component {
                 if (!this.#loading && !this.#loaded) {
                     try {
                         const replies: Reply[] = await fetch(
-                            `/api/post/${postName()}/replies/${this.#id}`,
+                            `/api/post/${postName()}/replies/${this.#id}?v=2`,
                         ).then((x) => x.json());
 
                         for (const reply of replies) {

@@ -102,6 +102,8 @@ func githubCallback(c fiber.Ctx) error {
 			error = "bad_verification"
 		} else if errors.Is(err, ErrUnverifiedEmail) {
 			error = "unverified_email"
+		} else if errors.Is(err, db.ErrUnverifiedAccount) {
+			error = "unverified_account"
 		} else if errors.Is(err, ErrGitHubServer) {
 			error = "github_server"
 		} else {

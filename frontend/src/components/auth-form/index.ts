@@ -1,3 +1,4 @@
+import "../content-card/index.ts";
 import { authRedirect } from "../../auth-utils";
 import { Component, element, staticElement } from "../../custom-elements";
 
@@ -22,6 +23,10 @@ export default class AuthForm extends Component {
             case "unverified_email":
                 authError =
                     "The primary email of your GitHub account doesn't exist or is unverified.";
+                break;
+            case "unverified_account":
+                authError =
+                    "An unverified account already uses this email. Reset its password before signing in with GitHub.";
                 break;
             case "github_server":
                 authError = "We couldn't connect to GitHub right now.";

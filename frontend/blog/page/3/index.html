@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="/favicon.ico" />
+    <title>Blog - Page 3</title>
+    <script type="module" src="/src/blog.ts"></script>
+  </head>
+  <body>
+    <div>
+      <nav-bar selected="blog"></nav-bar>
+      <main>
+        <header class="blog-heading"><h1>Blog</h1><img class="blog-art" src="/graphics/blog-fitted-light.svg" alt="" width="768" height="300"></header>
+        <section id="posts" aria-label="Articles">
+        
+            <blog-card href="/post/sample-building-for-reading/">
+                <span slot="title">Building for reading on screens of very different sizes</span>
+                <time slot="date" datetime="2026-05-08">8 May 2026</time>
+                <span slot="summary">A longer sample heading to explore wrapping, spacing, and the relationship between the article title and its surrounding network.</span>
+            </blog-card>
+            
+
+            <blog-card href="/post/sample-useful-constraints/">
+                <span slot="title">Useful constraints</span>
+                <time slot="date" datetime="2026-04-29">29 April 2026</time>
+                <span slot="summary">A smaller set of choices can make an experiment easier to understand.</span>
+            </blog-card>
+            
+
+            <blog-card href="/post/sample-looking-for-patterns/">
+                <span slot="title">Looking for patterns</span>
+                <time slot="date" datetime="2026-04-20">20 April 2026</time>
+                <span slot="summary">Clusters, gaps, branches and the temptation to find a story in every arrangement.</span>
+            </blog-card>
+            
+
+            <blog-card href="/post/sample-start-with-a-sketch/">
+                <span slot="title">Start with a sketch</span>
+                <time slot="date" datetime="2026-04-11">11 April 2026</time>
+                <span slot="summary">An unfinished drawing is sometimes the fastest way to ask a precise question.</span>
+            </blog-card>
+            
+
+            <blog-card href="/post/sample-enough-for-today/">
+                <span slot="title">Enough for today</span>
+                <time slot="date" datetime="2026-04-02">2 April 2026</time>
+                <span slot="summary">A brief closing note.</span>
+            </blog-card>
+            
+        <nav class="pagination" aria-label="Blog pages">
+<a href="/blog/page/2/" class="pagination-prev" rel="prev">Previous</a>
+<span class="pagination-pages">
+<a href="/blog/" class="pagination-page">1</a>
+<a href="/blog/page/2/" class="pagination-page">2</a>
+<span class="pagination-page current" aria-current="page">3</span>
+</span>
+<span class="pagination-next disabled" aria-disabled="true">Next</span>
+</nav>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

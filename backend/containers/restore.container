@@ -13,7 +13,7 @@ Environment=LITESTREAM_BUCKET=ashbythorpe-litestream
 Environment=LITESTREAM_ENDPOINT=https://4fdb09e24293ab3eb62c679b300a2158.r2.cloudflarestorage.com
 Environment=LITESTREAM_REPLICA_URL=s3://ashbythorpe-litestream/db
 
-Secret=litestream-access-key,type=env,target=LITESTREAM_ACCESS_KEY
+Secret=litestream-access-key,type=env,target=LITESTREAM_ACCESS_KEY_ID
 Secret=litestream-secret-access-key,type=env,target=LITESTREAM_SECRET_ACCESS_KEY
 
 Exec=restore -if-db-not-exists -if-replica-exists /data/app.db

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.ico" />
+    <title>Forgot Password</title>
+    <script type="module" src="../../src/forgot-password.ts"></script>
+  </head>
+  <body>
+    <nav-bar></nav-bar>
+    <main>
+      <content-card>
+        <h1>Forgot your password?</h1>
+        <p>Enter your email address and we’ll send you a link to reset your password.</p>
+        <form id="forgot-password-form">
+          <label for="email">Email address</label>
+          <input id="email" name="email" type="email" autocomplete="email" required />
+          <button type="submit">Send reset link</button>
+        </form>
+        <p id="status" role="status"></p>
+        <p id="error" role="alert"></p>
+        <a href="/auth/sign-in/">Back to sign in</a>
+      </content-card>
+    </main>
+  </body>
+</html>
